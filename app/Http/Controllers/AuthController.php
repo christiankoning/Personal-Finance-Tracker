@@ -49,10 +49,11 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => 'Logged out successfully'], 200);
     }
 
     public function user(Request $request)
