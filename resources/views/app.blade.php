@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>React App</title>
     @viteReactRefresh
-    @vite(['resources/js/app.jsx']) <!-- Include React -->
+    @vite(['resources/js/app.jsx', 'resources/css/app.css']) <!-- Include React -->
 </head>
 <body>
     <div id="app"></div> <!-- React mounts here -->
