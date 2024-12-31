@@ -19,9 +19,15 @@ const Register = () => {
         e.preventDefault();
         try {
             const response = await axios.post('/api/register', formData);
-            alert(response.data.message);
+            alert(response.data.message); // Show success message
+            window.location.href = '/login'; // Redirect to login
         } catch (error) {
-            alert('Registration failed. Please check your inputs.');
+            if (error.response && error.response.data.errors) {
+                const errors = Object.values(error.response.data.errors).flat().join('\n');
+                alert(errors);
+            } else {
+                alert('Registration failed. Please check your inputs.');
+            }
         }
     };
 
@@ -40,6 +46,7 @@ const Register = () => {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
+                autoComplete="disabled"
             />
             <input
                 type="password"
@@ -47,6 +54,7 @@ const Register = () => {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
+                autoComplete="disabled"
             />
             <button type="submit">Register</button>
         </form>

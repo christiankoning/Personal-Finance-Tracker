@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React App</title>
-    @vite(['resources/js/app.js']) <!-- Include React -->
+    @viteReactRefresh
+    @vite(['resources/js/app.jsx']) <!-- Include React -->
 </head>
 <body>
-<div id="app"></div> <!-- React mounts here -->
+    <div id="app"></div> <!-- React mounts here -->
 </body>
 </html>
