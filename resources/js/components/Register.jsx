@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import axios from "axios";
 
 const Register = () => {
+    const navigate = useNavigate(); // Initialize useNavigate
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -10,29 +12,58 @@ const Register = () => {
     });
 
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
 
-        // Clear the error when the user starts typing
-        if (name === "password" || name === "confirmPassword") {
-            setError("");
-        }
+        // Clear errors when typing
+        setError("");
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevent page refresh
 
-        // Check if passwords match
+        // Validate passwords
+        if (!formData.password || !formData.confirmPassword) {
+            setError("Both password fields are required.");
+            return;
+        }
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match.");
             return;
         }
 
-        // Proceed with form submission
-        console.log("Form Submitted", formData);
-        // Add your backend submission logic here
+        try {
+            // Send data to the backend
+            const response = await axios.post("/api/register", {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
+
+            // Show success message
+            setSuccess("Registration successful! Redirecting to login...");
+            setError("");
+
+            // Clear the form
+            setFormData({
+                name: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+            });
+
+            // Redirect to Login after 2 seconds
+            setTimeout(() => {
+                navigate("/login");
+            }, 1000);
+        } catch (err) {
+            // Handle backend errors
+            setError(err.response?.data?.message || "Something went wrong.");
+            setSuccess("");
+        }
     };
 
     return (
@@ -40,14 +71,21 @@ const Register = () => {
             {/* Registration Card */}
             <div className="bg-white text-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
                 <h2 className="text-2xl font-bold text-center mb-6">Create an Account</h2>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
                     {/* Name Field */}
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+                        <label
+                            htmlFor="name"
+                            className="block text-sm font-medium text-gray-700"
+                        >
+                            Name
+                        </label>
                         <input
                             type="text"
                             id="name"
                             name="name"
+                            value={formData.name}
+                            onChange={handleChange}
                             className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter your name"
                             required
@@ -56,17 +94,21 @@ const Register = () => {
 
                     {/* Email Field */}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                        <label
+                            htmlFor="email"
+                            className="block text-sm font-medium text-gray-700"
+                        >
                             Email
                         </label>
                         <input
                             type="email"
                             id="email"
                             name="email"
+                            value={formData.email}
+                            onChange={handleChange}
                             className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter your email"
                             required
-                            autoComplete="disabled"
                         />
                     </div>
 
@@ -82,6 +124,8 @@ const Register = () => {
                             type="password"
                             id="password"
                             name="password"
+                            value={formData.password}
+                            onChange={handleChange}
                             className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Create a password"
                             required
@@ -91,20 +135,27 @@ const Register = () => {
                     {/* Confirm Password Field */}
                     <div>
                         <label
-                            htmlFor="confirm-password"
+                            htmlFor="confirmPassword"
                             className="block text-sm font-medium text-gray-700"
                         >
                             Confirm Password
                         </label>
                         <input
                             type="password"
-                            id="confirm-password"
-                            name="confirm-password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
                             className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Confirm your password"
                             required
                         />
                     </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <p className="text-red-500 text-sm">{error}</p>
+                    )}
 
                     {/* Submit Button */}
                     <div>
