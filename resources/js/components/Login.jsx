@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // For navigation
+import axios from "axios";
 
 const Login = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -16,7 +19,7 @@ const Login = () => {
         setError("");
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Basic validation
@@ -25,9 +28,16 @@ const Login = () => {
             return;
         }
 
-        // Proceed with form submission
-        console.log("Form Submitted", formData);
-        // Add your backend submission logic here
+        try {
+            // Send login request to backend
+            const response = await axios.post("/api/login", formData);
+
+            // Redirect to the dashboard on successful login
+            navigate("/dashboard");
+        } catch (err) {
+            // Handle login errors
+            setError(err.response?.data?.message || "Login failed. Please try again.");
+        }
     };
 
     return (
