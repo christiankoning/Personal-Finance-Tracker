@@ -168,6 +168,16 @@ const Register = () => {
                     </div>
                 </form>
 
+                {/* Back to Homepage Button */}
+                <div className="mt-4 text-center">
+                    <a
+                        href="/"
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                    >
+                        Back to Homepage
+                    </a>
+                </div>
+
                 {/* Already have an account? */}
                 <p className="mt-4 text-center text-sm text-gray-600">
                     Already have an account?{" "}
