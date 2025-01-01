@@ -46,7 +46,6 @@ const Login = () => {
             <div className="bg-white text-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
                 <h2 className="text-2xl font-bold text-center mb-6">Login to Your Account</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    {/* Email Field */}
                     <div>
                         <label
                             htmlFor="email"
@@ -65,8 +64,6 @@ const Login = () => {
                             required
                         />
                     </div>
-
-                    {/* Password Field */}
                     <div>
                         <label
                             htmlFor="password"
@@ -85,13 +82,7 @@ const Login = () => {
                             required
                         />
                     </div>
-
-                    {/* Error Message */}
-                    {error && (
-                        <p className="text-red-500 text-sm">{error}</p>
-                    )}
-
-                    {/* Submit Button */}
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
                     <div>
                         <button
                             type="submit"
@@ -101,6 +92,16 @@ const Login = () => {
                         </button>
                     </div>
                 </form>
+
+                {/* Back to Homepage Button */}
+                <div className="mt-4 text-center">
+                    <a
+                        href="/"
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                    >
+                        Back to Homepage
+                    </a>
+                </div>
 
                 {/* Forgot Password and Register Link */}
                 <div className="mt-4 text-center text-sm text-gray-600">
