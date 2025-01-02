@@ -1,23 +1,38 @@
 import React, { useState } from "react";
 import axios from "axios";
+import CategoryDropdown from "./CategoryDropdown";
 
 const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
-    const [formData, setFormData] = useState(transaction);
+    const [formData, setFormData] = useState({
+        ...transaction,
+        customCategory: transaction.category === "Other" ? transaction.category : "",
+    });
     const [error, setError] = useState("");
+
+    const handleCategoryChange = ({ category, customCategory }) => {
+        setFormData({ ...formData, category, customCategory });
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-        setError("");
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const finalCategory =
+            formData.category === "Other" ? formData.customCategory : formData.category;
+
+        if (!finalCategory) {
+            setError("Please select or provide a category.");
+            return;
+        }
+
         try {
             const response = await axios.put(
                 `/api/transactions/${transaction.id}`,
-                formData,
+                { ...formData, category: finalCategory },
                 { withCredentials: true }
             );
             onTransactionUpdated(response.data);
@@ -32,6 +47,7 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
                 <h2 className="text-lg font-bold mb-4">Edit Transaction</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
+                    {/* Type Selection */}
                     <div>
                         <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                             Type
@@ -61,20 +77,15 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                             </label>
                         </div>
                     </div>
-                    <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                            Category
-                        </label>
-                        <input
-                            type="text"
-                            id="category"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
-                            required
-                        />
-                    </div>
+
+                    {/* Category Dropdown */}
+                    <CategoryDropdown
+                        category={formData.category}
+                        customCategory={formData.customCategory}
+                        onCategoryChange={handleCategoryChange}
+                    />
+
+                    {/* Remaining Fields */}
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
                             Amount
@@ -115,6 +126,7 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                         />
                     </div>
+
                     {error && <p className="text-red-500">{error}</p>}
                     <div className="flex justify-end space-x-4">
                         <button

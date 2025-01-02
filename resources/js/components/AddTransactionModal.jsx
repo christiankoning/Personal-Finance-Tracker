@@ -1,27 +1,39 @@
 import React, { useState } from "react";
 import axios from "axios";
+import CategoryDropdown from "./CategoryDropdown";
 
 const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
     const [formData, setFormData] = useState({
         category: "",
+        customCategory: "",
         amount: "",
         transaction_date: "",
         description: "",
-        type: "expense", // Default type
+        type: "expense",
     });
     const [error, setError] = useState("");
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-        setError("");
+    const handleCategoryChange = ({ category, customCategory }) => {
+        setFormData({ ...formData, category, customCategory });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const finalCategory =
+            formData.category === "Other" ? formData.customCategory : formData.category;
+
+        if (!finalCategory) {
+            setError("Please select or provide a category.");
+            return;
+        }
+
         try {
-            const response = await axios.post("/api/transactions", formData, { withCredentials: true });
+            const response = await axios.post(
+                "/api/transactions",
+                { ...formData, category: finalCategory },
+                { withCredentials: true }
+            );
             onTransactionAdded(response.data);
             onClose();
         } catch (err) {
@@ -45,7 +57,9 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                                     name="type"
                                     value="expense"
                                     checked={formData.type === "expense"}
-                                    onChange={handleChange}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, type: e.target.value })
+                                    }
                                     className="mr-2"
                                 />
                                 Expense
@@ -56,27 +70,20 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                                     name="type"
                                     value="income"
                                     checked={formData.type === "income"}
-                                    onChange={handleChange}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, type: e.target.value })
+                                    }
                                     className="mr-2"
                                 />
                                 Income
                             </label>
                         </div>
                     </div>
-                    <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                            Category
-                        </label>
-                        <input
-                            type="text"
-                            id="category"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
-                            required
-                        />
-                    </div>
+                    <CategoryDropdown
+                        category={formData.category}
+                        customCategory={formData.customCategory}
+                        onCategoryChange={handleCategoryChange}
+                    />
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
                             Amount
@@ -86,7 +93,9 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             id="amount"
                             name="amount"
                             value={formData.amount}
-                            onChange={handleChange}
+                            onChange={(e) =>
+                                setFormData({ ...formData, type: e.target.value })
+                            }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
@@ -100,7 +109,9 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             id="transaction_date"
                             name="transaction_date"
                             value={formData.transaction_date}
-                            onChange={handleChange}
+                            onChange={(e) =>
+                                setFormData({ ...formData, type: e.target.value })
+                            }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
@@ -113,7 +124,9 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             id="description"
                             name="description"
                             value={formData.description}
-                            onChange={handleChange}
+                            onChange={(e) =>
+                                setFormData({ ...formData, type: e.target.value })
+                            }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                         />
                     </div>
