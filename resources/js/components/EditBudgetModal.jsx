@@ -2,23 +2,16 @@ import React, { useState } from "react";
 import axios from "axios";
 import CategoryDropdown from "./CategoryDropdown";
 
-const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
+const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
     const [formData, setFormData] = useState({
-        category: transaction.category,
-        customCategory: transaction.category === "Other" ? transaction.customCategory : "",
-        amount: transaction.amount,
-        transaction_date: transaction.transaction_date,
-        description: transaction.description,
-        type: transaction.type,
+        category: budget.category,
+        customCategory: budget.category === "Other" ? budget.customCategory : "",
+        amount: budget.amount,
     });
     const [error, setError] = useState("");
 
     const handleCategoryChange = ({ category, customCategory }) => {
         setFormData({ ...formData, category, customCategory });
-    };
-
-    const handleCustomTypeChange = (type) => {
-        setFormData({ ...formData, type });
     };
 
     const handleChange = (e) => {
@@ -39,76 +32,41 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
 
         try {
             const response = await axios.put(
-                `/api/transactions/${transaction.id}`,
+                `/api/budgets/${budget.id}`, // Use budget.id
                 { ...formData, category: finalCategory },
                 { withCredentials: true }
             );
-            onTransactionUpdated(response.data);
+            onBudgetUpdated(response.data);
             onClose();
         } catch (err) {
-            setError("Failed to update transaction. Please try again.");
+            setError("Failed to update budget. Please try again.");
         }
     };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h2 className="text-lg font-bold mb-4">Edit Transaction</h2>
+                <h2 className="text-lg font-bold mb-4">Edit Budget</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     {/* Category Dropdown */}
                     <CategoryDropdown
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
-                        customType={formData.type}
-                        onCustomTypeChange={handleCustomTypeChange}
-                        filterType="all"
-                        showCustomType={true}
+                        filterType="expense" // Only show expense categories
+                        showCustomType={false} // Disable radio buttons for custom categories
                     />
 
                     {/* Amount Field */}
                     <div>
-                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                            Amount
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700">Amount</label>
                         <input
                             type="number"
-                            id="amount"
                             name="amount"
                             value={formData.amount}
                             onChange={handleChange}
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
-                        />
-                    </div>
-
-                    {/* Date Field */}
-                    <div>
-                        <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700">
-                            Date
-                        </label>
-                        <input
-                            type="date"
-                            id="transaction_date"
-                            name="transaction_date"
-                            value={formData.transaction_date}
-                            onChange={handleChange}
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
-                            required
-                        />
-                    </div>
-
-                    {/* Description Field */}
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
                         />
                     </div>
 
@@ -137,4 +95,4 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
     );
 };
 
-export default EditTransactionModal;
+export default EditBudgetModal;

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\BudgetController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::middleware('web')->group(function () {
@@ -23,4 +24,10 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::put('/transactions/{id}', [TransactionController::class, 'update']);
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
     Route::get('/transactions/recent', [TransactionController::class, 'recent']);
+    Route::get('/budgets', [BudgetController::class, 'index']);
+    Route::post('/budgets', [BudgetController::class, 'store']);
+    Route::put('/budgets/{id}', [BudgetController::class, 'update']);
+    Route::delete('/budgets/{id}', [BudgetController::class, 'destroy']);
+    Route::get('/budgets/spending', [BudgetController::class, 'getSpending']);
+
 });
