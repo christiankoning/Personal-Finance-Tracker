@@ -33,6 +33,35 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                 <h2 className="text-lg font-bold mb-4">Edit Transaction</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div>
+                        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+                            Type
+                        </label>
+                        <div className="flex space-x-4 mt-1">
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="type"
+                                    value="expense"
+                                    checked={formData.type === "expense"}
+                                    onChange={handleChange}
+                                    className="mr-2"
+                                />
+                                Expense
+                            </label>
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="type"
+                                    value="income"
+                                    checked={formData.type === "income"}
+                                    onChange={handleChange}
+                                    className="mr-2"
+                                />
+                                Income
+                            </label>
+                        </div>
+                    </div>
+                    <div>
                         <label htmlFor="category" className="block text-sm font-medium text-gray-700">
                             Category
                         </label>

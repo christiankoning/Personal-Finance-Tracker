@@ -12,6 +12,7 @@ const TransactionTable = ({ transactions, onEdit, onDelete }) => {
                 <thead>
                 <tr className="bg-blue-600 text-white">
                     <th className="py-2 px-4 text-left">Date</th>
+                    <th className="py-2 px-4 text-left">Type</th>
                     <th className="py-2 px-4 text-left">Category</th>
                     <th className="py-2 px-4 text-left">Amount</th>
                     <th className="py-2 px-4 text-left">Description</th>
@@ -22,6 +23,13 @@ const TransactionTable = ({ transactions, onEdit, onDelete }) => {
                 {transactions.map((transaction) => (
                     <tr key={transaction.id} className="hover:bg-gray-100">
                         <td className="py-2 px-4">{transaction.transaction_date}</td>
+                        <td className="py-2 px-4">
+                            {transaction.type === "expense" ? (
+                                <span className="text-red-600">Expense</span>
+                            ) : (
+                                <span className="text-green-600">Income</span>
+                            )}
+                        </td>
                         <td className="py-2 px-4">{transaction.category}</td>
                         <td className="py-2 px-4">${transaction.amount.toFixed(2)}</td>
                         <td className="py-2 px-4">{transaction.description || "-"}</td>
