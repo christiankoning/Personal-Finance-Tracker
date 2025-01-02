@@ -6,7 +6,8 @@ import Login from "../components/Login";
 import Dashboard from "../components/Dashboard";
 import ResetPassword from "../components/ResetPassword";
 import SetNewPassword from "../components/SetNewPassword";
-import { AuthRoute, PublicRoute } from "../components/AuthRoute"; // Import the components
+import Transactions from "../components/Transactions"; // Import the Transactions component
+import { AuthRoute, PublicRoute } from "../components/AuthRoute";
 
 const App = () => {
     return (
@@ -60,6 +61,14 @@ const App = () => {
                     element={
                         <AuthRoute redirectTo="/login">
                             <Dashboard />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/transactions"
+                    element={
+                        <AuthRoute redirectTo="/login">
+                            <Transactions />
                         </AuthRoute>
                     }
                 />

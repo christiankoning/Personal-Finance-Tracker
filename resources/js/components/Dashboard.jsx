@@ -1,72 +1,86 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import SidebarLayout from "./SidebarLayout";
 
 const Dashboard = () => {
-    const handleLogout = async () => {
-        try {
-            const response = await axios.post(
-                "/api/logout",
-                {},
-                { withCredentials: true }
-            );
-            alert(response.data.message);
-            window.location.href = "/login";
-        } catch (error) {
-            alert(error.response?.data?.message || "Logout failed. Please try again.");
-        }
-    };
+    const [recentTransactions, setRecentTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const fetchRecentTransactions = async () => {
+            try {
+                const response = await axios.get("/api/transactions/recent", { withCredentials: true });
+                setRecentTransactions(response.data);
+            } catch (err) {
+                setError("Failed to load recent transactions.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecentTransactions();
+    }, []);
 
     return (
-        <div className="min-h-screen flex bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-            {/* Sidebar */}
-            <aside className="w-64 bg-blue-600 text-white flex flex-col">
-                <div className="p-4 text-center font-bold text-xl">
-                    FinanceTracker
+        <SidebarLayout>
+            <h1 className="text-2xl font-bold mb-6">Welcome to Your Dashboard</h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Recent Transactions Summary */}
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h2 className="font-bold text-lg">Recent Transactions</h2>
+                    {loading && <p className="text-sm text-gray-500">Loading recent transactions...</p>}
+                    {error && <p className="text-sm text-red-500">{error}</p>}
+                    {!loading && !error && recentTransactions.length === 0 && (
+                        <p className="text-sm text-gray-500">No recent transactions available.</p>
+                    )}
+                    {!loading && !error && recentTransactions.length > 0 && (
+                        <ul className="space-y-2">
+                            {recentTransactions.map((transaction) => (
+                                <li
+                                    key={transaction.id}
+                                    className="flex justify-between items-center p-2 border-b last:border-0"
+                                >
+                                    <div>
+                                        <p className="font-medium">
+                                            {transaction.category} - {transaction.type === "expense" ? "-" : "+"}$
+                                            {transaction.amount.toFixed(2)}
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            {new Date(transaction.transaction_date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span
+                                            className={`px-2 py-1 text-xs rounded ${
+                                                transaction.type === "expense"
+                                                    ? "bg-red-100 text-red-600"
+                                                    : "bg-green-100 text-green-600"
+                                            }`}
+                                        >
+                                            {transaction.type.charAt(0).toUpperCase() +
+                                            transaction.type.slice(1)}
+                                        </span>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
-                <nav className="flex-1">
-                    <ul>
-                        <li className="p-4 hover:bg-blue-700 cursor-pointer">
-                            Dashboard
-                        </li>
-                        <li className="p-4 hover:bg-blue-700 cursor-pointer">
-                            Transactions
-                        </li>
-                        <li className="p-4 hover:bg-blue-700 cursor-pointer">
-                            Budgeting
-                        </li>
-                        <li className="p-4 hover:bg-blue-700 cursor-pointer">
-                            Insights
-                        </li>
-                    </ul>
-                </nav>
-                <button
-                    onClick={handleLogout}
-                    className="m-4 p-2 bg-red-600 rounded-lg hover:bg-red-700"
-                >
-                    Logout
-                </button>
-            </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 p-6 bg-gray-100 text-gray-800">
-                <h1 className="text-2xl font-bold mb-4">Welcome to Your Dashboard</h1>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Example Cards */}
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h2 className="font-bold text-lg">Recent Transactions</h2>
-                        <p className="text-sm text-gray-500">View your latest expenses and income.</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h2 className="font-bold text-lg">Monthly Budget</h2>
-                        <p className="text-sm text-gray-500">Track your spending against your budget.</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h2 className="font-bold text-lg">Spending Trends</h2>
-                        <p className="text-sm text-gray-500">Visualize your financial habits.</p>
-                    </div>
+                {/* Monthly Budget Summary */}
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h2 className="font-bold text-lg">Monthly Budget</h2>
+                    <p className="text-sm text-gray-500">Track your spending against your budget.</p>
                 </div>
-            </main>
-        </div>
+
+                {/* Spending Trends */}
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h2 className="font-bold text-lg">Spending Trends</h2>
+                    <p className="text-sm text-gray-500">Visualize your financial habits.</p>
+                </div>
+            </div>
+        </SidebarLayout>
     );
 };
 
