@@ -32,7 +32,7 @@ const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
 
         try {
             const response = await axios.put(
-                `/api/budgets/${budget.id}`,
+                `/api/budgets/${budget.id}`, // Use budget.id
                 { ...formData, category: finalCategory },
                 { withCredentials: true }
             );

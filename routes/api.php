@@ -28,4 +28,6 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::post('/budgets', [BudgetController::class, 'store']);
     Route::put('/budgets/{id}', [BudgetController::class, 'update']);
     Route::delete('/budgets/{id}', [BudgetController::class, 'destroy']);
+    Route::get('/budgets/spending', [BudgetController::class, 'getSpending']);
+
 });
