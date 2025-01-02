@@ -19,6 +19,7 @@ class TransactionController extends Controller
     {
         $request->validate([
             'category' => 'required|string',
+            'type' => 'required|in:expense,income',
             'amount' => 'required|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string',
@@ -27,6 +28,7 @@ class TransactionController extends Controller
         $transaction = Transaction::create([
             'user_id' => Auth::id(),
             'category' => $request->category,
+            'type' => $request->type,
             'amount' => $request->amount,
             'description' => $request->description,
             'transaction_date' => $request->transaction_date,
@@ -41,6 +43,7 @@ class TransactionController extends Controller
 
         $request->validate([
             'category' => 'required|string',
+            'type' => 'required|in:expense,income',
             'amount' => 'required|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string',
