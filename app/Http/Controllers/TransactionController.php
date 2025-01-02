@@ -61,4 +61,14 @@ class TransactionController extends Controller
 
         return response()->json(['message' => 'Transaction deleted successfully']);
     }
+
+    public function recent()
+    {
+        $transactions = Transaction::where('user_id', Auth::id())
+            ->orderBy('transaction_date', 'desc')
+            ->take(5)
+            ->get();
+
+        return response()->json($transactions);
+    }
 }
