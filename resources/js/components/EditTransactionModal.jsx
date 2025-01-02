@@ -4,13 +4,21 @@ import CategoryDropdown from "./CategoryDropdown";
 
 const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
     const [formData, setFormData] = useState({
-        ...transaction,
-        customCategory: transaction.category === "Other" ? transaction.category : "",
+        category: transaction.category,
+        customCategory: transaction.category === "Other" ? transaction.customCategory : "",
+        amount: transaction.amount,
+        transaction_date: transaction.transaction_date,
+        description: transaction.description,
+        type: transaction.type,
     });
     const [error, setError] = useState("");
 
     const handleCategoryChange = ({ category, customCategory }) => {
         setFormData({ ...formData, category, customCategory });
+    };
+
+    const handleCustomTypeChange = (type) => {
+        setFormData({ ...formData, type });
     };
 
     const handleChange = (e) => {
@@ -47,45 +55,18 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
                 <h2 className="text-lg font-bold mb-4">Edit Transaction</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    {/* Type Selection */}
-                    <div>
-                        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                            Type
-                        </label>
-                        <div className="flex space-x-4 mt-1">
-                            <label className="flex items-center">
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    value="expense"
-                                    checked={formData.type === "expense"}
-                                    onChange={handleChange}
-                                    className="mr-2"
-                                />
-                                Expense
-                            </label>
-                            <label className="flex items-center">
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    value="income"
-                                    checked={formData.type === "income"}
-                                    onChange={handleChange}
-                                    className="mr-2"
-                                />
-                                Income
-                            </label>
-                        </div>
-                    </div>
-
                     {/* Category Dropdown */}
                     <CategoryDropdown
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
+                        customType={formData.type}
+                        onCustomTypeChange={handleCustomTypeChange}
+                        filterType="all"
+                        showCustomType={true}
                     />
 
-                    {/* Remaining Fields */}
+                    {/* Amount Field */}
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
                             Amount
@@ -100,6 +81,8 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                             required
                         />
                     </div>
+
+                    {/* Date Field */}
                     <div>
                         <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700">
                             Date
@@ -114,6 +97,8 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                             required
                         />
                     </div>
+
+                    {/* Description Field */}
                     <div>
                         <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                             Description
@@ -127,7 +112,10 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                         />
                     </div>
 
+                    {/* Error Message */}
                     {error && <p className="text-red-500">{error}</p>}
+
+                    {/* Buttons */}
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"
