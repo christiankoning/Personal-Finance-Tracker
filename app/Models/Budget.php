@@ -14,4 +14,8 @@ class Budget extends Model
         'category',
         'amount',
     ];
+
+    protected $casts = [
+        'amount' => 'float',
+    ];
 }
