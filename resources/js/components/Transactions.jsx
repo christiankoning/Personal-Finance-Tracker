@@ -28,7 +28,11 @@ const Transactions = () => {
     }, []);
 
     const handleTransactionAdded = (newTransaction) => {
-        setTransactions((prev) => [...prev, newTransaction]);
+        setTransactions((prev) =>
+            [...prev, newTransaction].sort(
+                (a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)
+            )
+        );
     };
 
     const handleTransactionUpdated = (updatedTransaction) => {

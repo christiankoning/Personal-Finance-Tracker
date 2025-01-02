@@ -11,7 +11,9 @@ class TransactionController extends Controller
 {
     public function index()
     {
-        $transactions = Transaction::where('user_id', Auth::id())->get();
+        $transactions = Transaction::where('user_id', Auth::id())
+            ->orderBy('transaction_date', 'desc')
+            ->get();
         return response()->json($transactions);
     }
 
