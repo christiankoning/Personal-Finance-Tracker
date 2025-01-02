@@ -4,22 +4,39 @@ import SidebarLayout from "./SidebarLayout";
 
 const Dashboard = () => {
     const [recentTransactions, setRecentTransactions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [spendingData, setSpendingData] = useState([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(true);
+    const [loadingBudgets, setLoadingBudgets] = useState(true);
+    const [errorTransactions, setErrorTransactions] = useState("");
+    const [errorBudgets, setErrorBudgets] = useState("");
 
     useEffect(() => {
+        // Fetch recent transactions
         const fetchRecentTransactions = async () => {
             try {
                 const response = await axios.get("/api/transactions/recent", { withCredentials: true });
                 setRecentTransactions(response.data);
             } catch (err) {
-                setError("Failed to load recent transactions.");
+                setErrorTransactions("Failed to load recent transactions.");
             } finally {
-                setLoading(false);
+                setLoadingTransactions(false);
+            }
+        };
+
+        // Fetch spending data
+        const fetchSpendingData = async () => {
+            try {
+                const response = await axios.get("/api/budgets/spending", { withCredentials: true });
+                setSpendingData(response.data);
+            } catch (err) {
+                setErrorBudgets("Failed to load budget data.");
+            } finally {
+                setLoadingBudgets(false);
             }
         };
 
         fetchRecentTransactions();
+        fetchSpendingData();
     }, []);
 
     return (
@@ -29,12 +46,12 @@ const Dashboard = () => {
                 {/* Recent Transactions Summary */}
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h2 className="font-bold text-lg">Recent Transactions</h2>
-                    {loading && <p className="text-sm text-gray-500">Loading recent transactions...</p>}
-                    {error && <p className="text-sm text-red-500">{error}</p>}
-                    {!loading && !error && recentTransactions.length === 0 && (
+                    {loadingTransactions && <p className="text-sm text-gray-500">Loading recent transactions...</p>}
+                    {errorTransactions && <p className="text-sm text-red-500">{errorTransactions}</p>}
+                    {!loadingTransactions && !errorTransactions && recentTransactions.length === 0 && (
                         <p className="text-sm text-gray-500">No recent transactions available.</p>
                     )}
-                    {!loading && !error && recentTransactions.length > 0 && (
+                    {!loadingTransactions && !errorTransactions && recentTransactions.length > 0 && (
                         <ul className="space-y-2">
                             {recentTransactions.map((transaction) => (
                                 <li
@@ -70,8 +87,58 @@ const Dashboard = () => {
 
                 {/* Monthly Budget Summary */}
                 <div className="p-4 bg-white rounded-lg shadow">
-                    <h2 className="font-bold text-lg">Monthly Budget</h2>
-                    <p className="text-sm text-gray-500">Track your spending against your budget.</p>
+                    <h2 className="font-bold text-lg">Budget Summary</h2>
+                    {loadingBudgets && <p className="text-sm text-gray-500">Loading budget data...</p>}
+                    {errorBudgets && <p className="text-sm text-red-500">{errorBudgets}</p>}
+                    {!loadingBudgets && !errorBudgets && spendingData
+                        .sort((a, b) => {
+                            const aPriority = a.spent > a.budget ? 2 : (a.spent / a.budget) >= 0.9 ? 1 : 0;
+                            const bPriority = b.spent > b.budget ? 2 : (b.spent / b.budget) >= 0.9 ? 1 : 0;
+                            if (bPriority !== aPriority) {
+                                return bPriority - aPriority;
+                            }
+                            return (b.spent / b.budget) - (a.spent / a.budget);
+                        })
+                        .slice(0, 5)
+                        .map(({ category, budget, spent }) => {
+                            const spentValue = parseFloat(spent) || 0;
+                            const percentage = Math.min((spentValue / budget) * 100, 100);
+                            const barColor =
+                                percentage < 75
+                                    ? "bg-green-500"
+                                    : percentage < 100
+                                        ? "bg-yellow-500"
+                                        : "bg-red-500";
+
+                            return (
+                                <div key={category} className="mb-4">
+                                    <div className="flex justify-between">
+                                        <span className="font-medium">{category}</span>
+                                        <span
+                                            className={`font-bold ${
+                                                spentValue > budget ? "text-red-500" : "text-gray-700"
+                                            }`}
+                                        >
+                                            ${spentValue.toFixed(2)} / ${budget.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                                        <div
+                                            className={`h-4 rounded-full ${barColor}`}
+                                            style={{ width: `${percentage}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    <div className="text-right mt-4">
+                        <a
+                            href="/budgets"
+                            className="text-blue-600 hover:underline text-sm"
+                        >
+                            View All Budgets
+                        </a>
+                    </div>
                 </div>
 
                 {/* Spending Trends */}
