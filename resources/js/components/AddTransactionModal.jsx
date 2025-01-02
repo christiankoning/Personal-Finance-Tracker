@@ -94,7 +94,7 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             name="amount"
                             value={formData.amount}
                             onChange={(e) =>
-                                setFormData({ ...formData, type: e.target.value })
+                                setFormData({ ...formData, [e.target.name]: e.target.value })
                             }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
@@ -110,7 +110,7 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             name="transaction_date"
                             value={formData.transaction_date}
                             onChange={(e) =>
-                                setFormData({ ...formData, type: e.target.value })
+                                setFormData({ ...formData, [e.target.name]: e.target.value })
                             }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
@@ -125,7 +125,7 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             name="description"
                             value={formData.description}
                             onChange={(e) =>
-                                setFormData({ ...formData, type: e.target.value })
+                                setFormData({ ...formData, [e.target.name]: e.target.value })
                             }
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                         />
