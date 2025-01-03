@@ -8,6 +8,7 @@ import ResetPassword from "../components/ResetPassword";
 import SetNewPassword from "../components/SetNewPassword";
 import Transactions from "../components/Transactions";
 import Budget from "../components/Budget";
+import IncomeGoals from "../components/IncomeGoals";
 import { AuthRoute, PublicRoute } from "../components/AuthRoute";
 
 const App = () => {
@@ -78,6 +79,14 @@ const App = () => {
                     element={
                         <AuthRoute redirectTo="/login">
                             <Budget />
+                        </AuthRoute>
+                    }
+                />
+                <Route
+                    path="/goals"
+                    element={
+                        <AuthRoute redirectTo="/login">
+                            <IncomeGoals />
                         </AuthRoute>
                     }
                 />

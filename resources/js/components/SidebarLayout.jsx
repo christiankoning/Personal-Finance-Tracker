@@ -44,6 +44,10 @@ const SidebarLayout = ({ children }) => {
                             onClick={() => navigate("/budgets")}>
                             Budgeting
                         </li>
+                        <li className="p-4 hover:bg-blue-700 cursor-pointer"
+                            onClick={() => navigate("/goals")}>
+                            Income Goals
+                        </li>
                         <li className="p-4 hover:bg-blue-700 cursor-pointer">
                             Insights
                         </li>
