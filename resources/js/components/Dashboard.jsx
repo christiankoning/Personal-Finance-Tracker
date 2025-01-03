@@ -9,6 +9,7 @@ const Dashboard = () => {
     const [loadingBudgets, setLoadingBudgets] = useState(true);
     const [errorTransactions, setErrorTransactions] = useState("");
     const [errorBudgets, setErrorBudgets] = useState("");
+    const [incomeGoals, setIncomeGoals] = useState([]);
 
     useEffect(() => {
         // Fetch recent transactions
@@ -35,8 +36,18 @@ const Dashboard = () => {
             }
         };
 
+        const fetchIncomeGoals = async () => {
+            try {
+                const response = await axios.get("/api/goals", { withCredentials: true });
+                setIncomeGoals(response.data);
+            } catch (err) {
+                console.error("Failed to load income goals.");
+            }
+        };
+
         fetchRecentTransactions();
         fetchSpendingData();
+        fetchIncomeGoals();
     }, []);
 
     return (
@@ -137,6 +148,54 @@ const Dashboard = () => {
                             className="text-blue-600 hover:underline text-sm"
                         >
                             View All Budgets
+                        </a>
+                    </div>
+                </div>
+
+                {/* Income Goals */}
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h2 className="font-bold text-lg">Income Goals</h2>
+                    {incomeGoals.length === 0 ? (
+                        <p className="text-sm text-gray-500">No income goals set.</p>
+                    ) : (
+                        incomeGoals
+                            .sort((a, b) => (b.progress / b.amount) - (a.progress / a.amount))
+                            .slice(0, 5)
+                            .map(({ id, category, amount, progress, deadline }) => {
+                                const percentage = Math.min((progress / amount) * 100, 100);
+                                const barColor =
+                                    percentage < 75
+                                        ? "bg-green-500"
+                                        : percentage < 100
+                                            ? "bg-yellow-500"
+                                            : "bg-blue-500";
+
+                                return (
+                                    <div key={id} className="mb-4">
+                                        <div className="flex justify-between">
+                                            <span className="font-medium">{category}</span>
+                                            <span className={`font-bold ${percentage >= 100 ? "text-blue-500" : "text-gray-700"}`}>
+                                            ${progress.toFixed(2)} / ${amount.toFixed(2)}
+                                        </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                                            <div
+                                                className={`h-4 rounded-full ${barColor}`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                        {deadline && (
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Target Date: {new Date(deadline).toLocaleDateString()}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })
+                    )}
+                    <div className="text-right mt-4">
+                        <a href="/goals" className="text-blue-600 hover:underline text-sm">
+                            View All Income Goals
                         </a>
                     </div>
                 </div>
