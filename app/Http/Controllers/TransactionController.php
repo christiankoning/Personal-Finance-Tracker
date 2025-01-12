@@ -25,6 +25,7 @@ class TransactionController extends Controller
             'amount' => 'required|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string',
+            'currency' => 'required|string|max:3',
         ]);
 
         $transaction = Transaction::create([
@@ -34,6 +35,7 @@ class TransactionController extends Controller
             'amount' => $request->amount,
             'description' => $request->description,
             'transaction_date' => $request->transaction_date,
+            'currency' => $request->currency,
         ]);
 
         return response()->json($transaction, 201);
@@ -49,6 +51,7 @@ class TransactionController extends Controller
             'amount' => 'required|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string',
+            'currency' => 'required|string|max:3',
         ]);
 
         $transaction->update($request->all());
