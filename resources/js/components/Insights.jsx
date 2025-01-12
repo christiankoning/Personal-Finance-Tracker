@@ -1,6 +1,41 @@
 import React, { useState, useEffect } from "react";
 import SidebarLayout from "./SidebarLayout";
-import axios from "axios";
+import { Bar, Line, Doughnut } from "react-chartjs-2";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    LineElement,
+    PointElement,
+    ArcElement,
+    Tooltip,
+    Legend,
+} from "chart.js";
+
+// Register Chart.js components
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    LineElement,
+    PointElement,
+    ArcElement,
+    Tooltip,
+    Legend
+);
+
+// Category-Color Mapping
+const categoryColors = {
+    Groceries: "rgba(255, 99, 132, 0.5)", // Red
+    Entertainment: "rgba(54, 162, 235, 0.5)", // Blue
+    Utilities: "rgba(255, 206, 86, 0.5)", // Yellow
+    Rent: "rgba(75, 192, 192, 0.5)", // Teal
+    Travel: "rgba(153, 102, 255, 0.5)", // Purple
+    Other: "rgba(199, 199, 199, 0.5)", // Gray
+};
+
+const getColorForCategory = (category) => categoryColors[category] || "rgba(100, 100, 100, 0.5)";
 
 const Insights = () => {
     const [spendingTrends, setSpendingTrends] = useState([]);
@@ -25,6 +60,57 @@ const Insights = () => {
         fetchInsights();
     }, []);
 
+    const chartOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "top",
+            },
+        },
+    };
+
+    const spendingChartData = {
+        labels: [...new Set(spendingTrends.map((data) => data.month))],
+        datasets: spendingTrends.reduce((datasets, { month, category, total }) => {
+            let dataset = datasets.find((d) => d.label === category);
+            if (!dataset) {
+                dataset = {
+                    label: category,
+                    data: [],
+                    backgroundColor: getColorForCategory(category),
+                };
+                datasets.push(dataset);
+            }
+            dataset.data.push(total);
+            return datasets;
+        }, []),
+    };
+
+    const incomeChartData = {
+        labels: incomeTrends.map((data) => data.month),
+        datasets: [
+            {
+                label: "Income",
+                data: incomeTrends.map((data) => data.total),
+                fill: false,
+                backgroundColor: "rgba(75, 192, 192, 0.5)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const budgetChartData = {
+        labels: budgetAdherence.map((data) => data.category),
+        datasets: [
+            {
+                data: budgetAdherence.map((data) => data.spent),
+                backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
+            },
+        ],
+    };
+
     return (
         <SidebarLayout>
             <h1 className="text-3xl font-bold mb-6">Insights</h1>
@@ -32,19 +118,37 @@ const Insights = () => {
             {/* Spending Trends */}
             <div className="p-4 bg-white rounded-lg shadow mb-6">
                 <h2 className="font-bold text-lg mb-4">Spending Trends</h2>
-                <p className="text-sm text-gray-500">Graph of monthly spending trends (Coming Soon)</p>
+                {spendingTrends.length > 0 ? (
+                    <div className="h-64">
+                        <Bar data={spendingChartData} options={chartOptions} />
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-500">No spending data available.</p>
+                )}
             </div>
 
             {/* Income Trends */}
             <div className="p-4 bg-white rounded-lg shadow mb-6">
                 <h2 className="font-bold text-lg mb-4">Income Trends</h2>
-                <p className="text-sm text-gray-500">Graph of monthly income trends (Coming Soon)</p>
+                {incomeTrends.length > 0 ? (
+                    <div className="h-64">
+                        <Line data={incomeChartData} options={chartOptions} />
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-500">No income data available.</p>
+                )}
             </div>
 
             {/* Budget Adherence */}
             <div className="p-4 bg-white rounded-lg shadow">
                 <h2 className="font-bold text-lg mb-4">Budget Adherence</h2>
-                <p className="text-sm text-gray-500">Graph of adherence to budgets (Coming Soon)</p>
+                {budgetAdherence.length > 0 ? (
+                    <div className="h-64">
+                        <Doughnut data={budgetChartData} options={chartOptions} />
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-500">No budget adherence data available.</p>
+                )}
             </div>
         </SidebarLayout>
     );
