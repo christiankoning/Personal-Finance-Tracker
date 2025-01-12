@@ -1,22 +1,25 @@
-import React, { useState } from "react";
+import React, {useState, useContext} from "react";
 import axios from "axios";
 import CategoryDropdown from "./CategoryDropdown";
+import {CurrencyContext} from "./CurrencyContext";
 
-const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
+const EditBudgetModal = ({budget, onClose, onBudgetUpdated}) => {
+    const {currencyRates, currencySymbols} = useContext(CurrencyContext);
     const [formData, setFormData] = useState({
         category: budget.category,
         customCategory: budget.category === "Other" ? budget.customCategory : "",
         amount: budget.amount,
+        currency: budget.currency,
     });
     const [error, setError] = useState("");
 
-    const handleCategoryChange = ({ category, customCategory }) => {
-        setFormData({ ...formData, category, customCategory });
+    const handleCategoryChange = ({category, customCategory}) => {
+        setFormData({...formData, category, customCategory});
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const {name, value} = e.target;
+        setFormData({...formData, [name]: value});
     };
 
     const handleSubmit = async (e) => {
@@ -32,17 +35,15 @@ const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
 
         try {
             const response = await axios.put(
-                `/api/budgets/${budget.id}`, // Use budget.id
-                { ...formData, category: finalCategory },
-                { withCredentials: true }
-            );
+                `/api/budgets/${budget.id}`,
+                {...formData, category: finalCategory},
+                {withCredentials: true});
             onBudgetUpdated(response.data);
             onClose();
         } catch (err) {
             setError("Failed to update budget. Please try again.");
         }
     };
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -68,6 +69,23 @@ const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
+                    </div>
+
+                    {/* Currency Selector */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Currency</label>
+                        <select
+                            name="currency"
+                            value={formData.currency}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border rounded-lg"
+                        >
+                            {Object.keys(currencyRates).map((currency) => (
+                                <option key={currency} value={currency}>
+                                    {currencySymbols[currency] || currency} ({currency})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Error Message */}

@@ -279,46 +279,53 @@ const Dashboard = () => {
                     <h2 className="font-bold text-lg">Budget Summary</h2>
                     {loadingBudgets && <p className="text-sm text-gray-500">Loading budget data...</p>}
                     {errorBudgets && <p className="text-sm text-red-500">{errorBudgets}</p>}
-                    {!loadingBudgets && !errorBudgets && budgetSummary
-                        .slice(0, 5)
-                        .map(({ category, budget, spent }) => {
-                            const convertedSpent = convertAmount(spent, "USD", selectedCurrency); // Add conversion
-                            const convertedBudget = convertAmount(budget, "USD", selectedCurrency); // Add conversion
-                            const percentage = Math.min((convertedSpent / convertedBudget) * 100, 100);
-                            const barColor =
-                                percentage < 75
-                                    ? "bg-green-500"
-                                    : percentage < 100
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500";
+                    {!loadingBudgets && !errorBudgets && budgetSummary.length > 0 ? (
+                        <ul>
+                            {budgetSummary.map(({ category, budget, spent, currency }) => {
+                                const convertedSpent = convertAmount(spent, currency);
+                                const convertedBudget = convertAmount(budget, currency);
+                                const percentage = Math.min((convertedSpent / convertedBudget) * 100, 100);
+                                const barColor =
+                                    percentage < 75
+                                        ? "bg-green-500"
+                                        : percentage < 100
+                                            ? "bg-yellow-500"
+                                            : "bg-red-500";
 
-                            return (
-                                <div key={category} className="mb-4">
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">{category}</span>
-                                        <span
-                                            className={`font-bold ${
-                                                convertedSpent > convertedBudget ? "text-red-500" : "text-gray-700"
-                                            }`}
-                                        >
-                                            {formatCurrency(convertedSpent, selectedCurrency)} /{" "}
-                                            {formatCurrency(convertedBudget, selectedCurrency)}
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
-                                        <div
-                                            className={`h-4 rounded-full ${barColor}`}
-                                            style={{ width: `${percentage}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    <div className="text-right mt-4">
-                        <a href="/budgets" className="text-blue-600 hover:underline text-sm">
-                            View All Budgets
-                        </a>
-                    </div>
+                                return (
+                                    <li key={category} className="mb-4 border-b last:border-0 py-2">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="font-medium">{category}</span>
+                                                <span className="ml-4 font-bold">
+                                                    {formatCurrency(spent, currency)} / {formatCurrency(budget, currency)} {/* Original */}
+                                                    {selectedCurrency !== currency && (
+                                                        <span className="text-gray-500 text-sm ml-2">
+                                                            ({formatCurrency(convertedSpent, selectedCurrency)} /{" "}
+                                                            {formatCurrency(convertedBudget, selectedCurrency)}) {/* Converted */}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                                            <div
+                                                className={`h-4 rounded-full ${barColor}`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                        {spent > budget && (
+                                            <p className="text-sm text-red-500 mt-2">
+                                                You’ve exceeded your budget for this category!
+                                            </p>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">No budgets or spending data available.</p>
+                    )}
                 </div>
 
                 {/* Income Goals */}

@@ -1,15 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import SidebarLayout from "./SidebarLayout";
 import CategoryDropdown from "./CategoryDropdown";
 import EditBudgetModal from "./EditBudgetModal";
 import axios from "axios";
+import { CurrencyContext } from "./CurrencyContext";
 
 const Budgets = () => {
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
     const [budgets, setBudgets] = useState([]);
     const [spendingData, setSpendingData] = useState([]);
-    const [formData, setFormData] = useState({ category: "", customCategory: "", amount: "" });
+    const [formData, setFormData] = useState({
+        category: "",
+        customCategory: "",
+        amount: "",
+        currency: selectedCurrency,
+    });
     const [error, setError] = useState("");
     const [selectedBudget, setSelectedBudget] = useState(null);
+
+    const convertAmount = (amount, originalCurrency) => {
+        if (!currencyRates[originalCurrency] || !currencyRates[selectedCurrency]) return amount;
+        return (amount / currencyRates[originalCurrency]) * currencyRates[selectedCurrency];
+    };
+
+    const formatCurrency = (amount, currency) => {
+        const symbol = currencySymbols[currency] || currency;
+        return `${symbol}${amount.toFixed(2)}`;
+    };
 
     useEffect(() => {
         const fetchBudgetsAndSpending = async () => {
@@ -42,7 +59,6 @@ const Budgets = () => {
             return;
         }
 
-        // Check for duplicate category
         if (budgets.some((budget) => budget.category === finalCategory)) {
             setError("This category already has a budget. Please edit the existing budget.");
             return;
@@ -56,7 +72,6 @@ const Budgets = () => {
             );
             const newBudget = response.data;
 
-            // Fetch updated spending data
             const spendingResponse = await axios.get("/api/budgets/spending", { withCredentials: true });
             const updatedSpending = spendingResponse.data.find(
                 (data) => data.category === newBudget.category
@@ -69,10 +84,11 @@ const Budgets = () => {
                     category: updatedSpending.category,
                     budget: newBudget.amount,
                     spent: updatedSpending.spent,
+                    currency: newBudget.currency,
                 },
             ]);
 
-            setFormData({ category: "", customCategory: "", amount: "" });
+            setFormData({ category: "", customCategory: "", amount: "", currency: selectedCurrency });
         } catch (err) {
             setError("Failed to add budget. Please try again.");
         }
@@ -82,7 +98,9 @@ const Budgets = () => {
         try {
             await axios.delete(`/api/budgets/${id}`, { withCredentials: true });
             setBudgets((prev) => prev.filter((budget) => budget.id !== id));
-            setSpendingData((prev) => prev.filter((data) => data.category !== budgets.find((b) => b.id === id)?.category));
+            setSpendingData((prev) =>
+                prev.filter((data) => data.category !== budgets.find((b) => b.id === id)?.category)
+            );
         } catch (err) {
             console.error("Failed to delete budget.", err);
         }
@@ -95,7 +113,7 @@ const Budgets = () => {
         setSpendingData((prev) =>
             prev.map((data) =>
                 data.category === updatedBudget.category
-                    ? { ...data, budget: updatedBudget.amount }
+                    ? { ...data, budget: updatedBudget.amount, currency: updatedBudget.currency }
                     : data
             )
         );
@@ -123,6 +141,20 @@ const Budgets = () => {
                         required
                     />
                 </div>
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Currency</label>
+                    <select
+                        value={formData.currency}
+                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                        className="w-full px-4 py-2 border rounded-lg"
+                    >
+                        {Object.keys(currencyRates).map((currency) => (
+                            <option key={currency} value={currency}>
+                                {currencySymbols[currency] || currency} ({currency})
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     Add Budget
                 </button>
@@ -135,9 +167,10 @@ const Budgets = () => {
                     <p className="text-sm text-gray-500">No budgets or spending data available.</p>
                 ) : (
                     <ul>
-                        {spendingData.map(({ category, budget, spent }) => {
-                            const spentValue = parseFloat(spent) || 0;
-                            const percentage = Math.min((spentValue / budget) * 100, 100);
+                        {spendingData.map(({ category, budget, spent, currency }) => {
+                            const convertedSpent = convertAmount(spent, currency);
+                            const convertedBudget = convertAmount(budget, currency);
+                            const percentage = Math.min((convertedSpent / convertedBudget) * 100, 100);
                             const barColor =
                                 percentage < 75
                                     ? "bg-green-500"
@@ -150,35 +183,15 @@ const Budgets = () => {
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <span className="font-medium">{category}</span>
-                                            <span
-                                                className={`ml-4 font-bold ${
-                                                    spentValue > budget ? "text-red-500" : "text-gray-700"
-                                                }`}
-                                            >
-                                                ${spentValue.toFixed(2)} / ${budget.toFixed(2)}
+                                            <span className="ml-4 font-bold">
+                                                {formatCurrency(spent, currency)} / {formatCurrency(budget, currency)} {/* Original */}
+                                                {selectedCurrency !== currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                                        ({formatCurrency(convertedSpent, selectedCurrency)} /{" "}
+                                                        {formatCurrency(convertedBudget, selectedCurrency)}) {/* Converted */}
+                                                    </span>
+                                                )}
                                             </span>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            {/* Edit Button */}
-                                            <button
-                                                onClick={() =>
-                                                    setSelectedBudget({
-                                                        id: budgets.find((budget) => budget.category === category)?.id,
-                                                        category,
-                                                        amount: budget,
-                                                    })
-                                                }
-                                                className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                                            >
-                                                Edit
-                                            </button>
-                                            {/* Delete Button */}
-                                            <button
-                                                onClick={() => handleDelete(budgets.find((budget) => budget.category === category)?.id)}
-                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                                            >
-                                                Delete
-                                            </button>
                                         </div>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
@@ -187,7 +200,7 @@ const Budgets = () => {
                                             style={{ width: `${percentage}%` }}
                                         ></div>
                                     </div>
-                                    {spentValue > budget && (
+                                    {spent > budget && (
                                         <p className="text-sm text-red-500 mt-2">
                                             You’ve exceeded your budget for this category!
                                         </p>
