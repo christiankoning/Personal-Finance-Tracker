@@ -116,45 +116,6 @@ const Dashboard = () => {
         fetchBudgetAdherence();
     }, []);
 
-    const spendingChartData = {
-        labels: [...new Set(spendingData.map((data) => data.month))],
-        datasets: spendingData.reduce((datasets, { month, category, total }) => {
-            let dataset = datasets.find((d) => d.label === category);
-            if (!dataset) {
-                dataset = {
-                    label: category,
-                    data: [],
-                    backgroundColor: getColorForCategory(category),
-                };
-                datasets.push(dataset);
-            }
-            dataset.data.push(total);
-            return datasets;
-        }, []),
-    };
-    const incomeChartData = {
-        labels: incomeTrends.map((data) => data.month),
-        datasets: [
-            {
-                label: "Income",
-                data: incomeTrends.map((data) => data.total),
-                fill: false,
-                backgroundColor: "rgba(75, 192, 192, 0.5)",
-                borderColor: "rgba(75, 192, 192, 1)",
-            },
-        ],
-    };
-
-    const budgetChartData = {
-        labels: budgetAdherence.map((data) => data.category),
-        datasets: [
-            {
-                data: budgetAdherence.map((data) => data.spent),
-                backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
-            },
-        ],
-    };
-
     const chartOptions = {
         maintainAspectRatio: false,
         responsive: true,
@@ -201,6 +162,45 @@ const Dashboard = () => {
                 },
             },
         },
+    };
+
+    const spendingChartData = {
+        labels: [...new Set(spendingData.map((data) => data.month))],
+        datasets: spendingData.reduce((datasets, { month, category, total }) => {
+            let dataset = datasets.find((d) => d.label === category);
+            if (!dataset) {
+                dataset = {
+                    label: category,
+                    data: [],
+                    backgroundColor: getColorForCategory(category),
+                };
+                datasets.push(dataset);
+            }
+            dataset.data.push(total);
+            return datasets;
+        }, []),
+    };
+    const incomeChartData = {
+        labels: incomeTrends.map((data) => data.month),
+        datasets: [
+            {
+                label: "Income",
+                data: incomeTrends.map((data) => data.total),
+                fill: false,
+                backgroundColor: "rgba(75, 192, 192, 0.5)",
+                borderColor: "rgba(75, 192, 192, 1)",
+            },
+        ],
+    };
+
+    const budgetChartData = {
+        labels: budgetAdherence.map((data) => data.category),
+        datasets: [
+            {
+                data: budgetAdherence.map((data) => data.spent),
+                backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
+            },
+        ],
     };
 
     return (
