@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import CategoryDropdown from "./CategoryDropdown";
+import { CurrencyContext } from "./CurrencyContext";
 
 const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
+    const { currencySymbols, selectedCurrency } = useContext(CurrencyContext);
     const [formData, setFormData] = useState({
         category: "",
         customCategory: "",
@@ -10,15 +12,12 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
         transaction_date: "",
         description: "",
         type: "expense",
+        currency: selectedCurrency,
     });
     const [error, setError] = useState("");
 
     const handleCategoryChange = ({ category, customCategory }) => {
         setFormData({ ...formData, category, customCategory });
-    };
-
-    const handleCustomTypeChange = (type) => {
-        setFormData({ ...formData, type });
     };
 
     const handleSubmit = async (e) => {
@@ -54,8 +53,6 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
-                        customType={formData.type}
-                        onCustomTypeChange={handleCustomTypeChange}
                         filterType="all"
                         showCustomType={true}
                     />
@@ -74,6 +71,26 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+                            Currency
+                        </label>
+                        <select
+                            id="currency"
+                            name="currency"
+                            value={formData.currency}
+                            onChange={(e) =>
+                                setFormData({ ...formData, [e.target.name]: e.target.value })
+                            }
+                            className="w-full mt-1 px-4 py-2 border rounded-lg"
+                        >
+                            {Object.entries(currencySymbols).map(([code, symbol]) => (
+                                <option key={code} value={code}>
+                                    {symbol} {code}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700">

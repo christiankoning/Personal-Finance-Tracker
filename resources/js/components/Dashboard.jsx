@@ -59,8 +59,8 @@ const Dashboard = () => {
         return (amount * currencyRates[selectedCurrency]) / currencyRates[originalCurrency];
     };
 
-    const formatCurrency = (amount) => {
-        const symbol = currencySymbols[selectedCurrency] || selectedCurrency;
+    const formatCurrency = (amount, currency = selectedCurrency) => {
+        const symbol = currencySymbols[currency] || currency;
         return `${symbol}${amount.toFixed(2)}`;
     };
 
@@ -234,34 +234,42 @@ const Dashboard = () => {
                     )}
                     {!loadingTransactions && !errorTransactions && recentTransactions.length > 0 && (
                         <ul className="space-y-2">
-                            {recentTransactions.map((transaction) => (
-                                <li
-                                    key={transaction.id}
-                                    className="flex justify-between items-center p-2 border-b last:border-0"
-                                >
-                                    <div>
-                                        <p className="font-medium">
-                                            {transaction.category} - {transaction.type === "expense" ? "-" : "+"}
-                                            {formatCurrency(convertAmount(transaction.amount, transaction.currency))}
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            {new Date(transaction.transaction_date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded ${
-                                                transaction.type === "expense"
-                                                    ? "bg-red-100 text-red-600"
-                                                    : "bg-green-100 text-green-600"
-                                            }`}
-                                        >
-                                            {transaction.type.charAt(0).toUpperCase() +
-                                            transaction.type.slice(1)}
-                                        </span>
-                                    </div>
-                                </li>
-                            ))}
+                            {recentTransactions.map((transaction) => {
+                                const convertedAmount = convertAmount(transaction.amount, transaction.currency || "USD");
+                                return (
+                                    <li
+                                        key={transaction.id}
+                                        className="flex justify-between items-center p-2 border-b last:border-0"
+                                    >
+                                        <div>
+                                            <p className="font-medium">
+                                                {transaction.category} - {transaction.type === "expense" ? "-" : "+"}
+                                                {formatCurrency(transaction.amount, transaction.currency)} {/* Original */}
+                                                {selectedCurrency !== transaction.currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedAmount, selectedCurrency)}) {/* Converted */}
+                                    </span>
+                                                )}
+                                            </p>
+                                            <p className="text-sm text-gray-500">
+                                                {new Date(transaction.transaction_date).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <div>
+                            <span
+                                className={`px-2 py-1 text-xs rounded ${
+                                    transaction.type === "expense"
+                                        ? "bg-red-100 text-red-600"
+                                        : "bg-green-100 text-green-600"
+                                }`}
+                            >
+                                {transaction.type.charAt(0).toUpperCase() +
+                                transaction.type.slice(1)}
+                            </span>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )}
                 </div>

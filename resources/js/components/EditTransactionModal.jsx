@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import CategoryDropdown from "./CategoryDropdown";
+import { CurrencyContext } from "./CurrencyContext";
 
 const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
+    const { currencySymbols } = useContext(CurrencyContext);
     const [formData, setFormData] = useState({
         category: transaction.category,
         customCategory: transaction.category === "Other" ? transaction.customCategory : "",
@@ -10,15 +12,12 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
         transaction_date: transaction.transaction_date,
         description: transaction.description,
         type: transaction.type,
+        currency: transaction.currency || "USD", // Use transaction's currency or default to "USD"
     });
     const [error, setError] = useState("");
 
     const handleCategoryChange = ({ category, customCategory }) => {
         setFormData({ ...formData, category, customCategory });
-    };
-
-    const handleCustomTypeChange = (type) => {
-        setFormData({ ...formData, type });
     };
 
     const handleChange = (e) => {
@@ -60,8 +59,6 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
-                        customType={formData.type}
-                        onCustomTypeChange={handleCustomTypeChange}
                         filterType="all"
                         showCustomType={true}
                     />
@@ -80,6 +77,26 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
+                    </div>
+
+                    {/* Currency Dropdown */}
+                    <div>
+                        <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+                            Currency
+                        </label>
+                        <select
+                            id="currency"
+                            name="currency"
+                            value={formData.currency}
+                            onChange={handleChange}
+                            className="w-full mt-1 px-4 py-2 border rounded-lg"
+                        >
+                            {Object.entries(currencySymbols).map(([code, symbol]) => (
+                                <option key={code} value={code}>
+                                    {symbol} {code}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Date Field */}
