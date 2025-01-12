@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import SidebarLayout from "./SidebarLayout";
+import { CurrencyContext } from "./CurrencyContext";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -48,6 +49,20 @@ const Dashboard = () => {
     const [errorBudgets, setErrorBudgets] = useState("");
     const [incomeGoals, setIncomeGoals] = useState([]);
     const [budgetAdherence, setBudgetAdherence] = useState([]);
+
+    // CurrencyContext variables
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
+
+    // Helper functions for conversion and formatting
+    const convertAmount = (amount, originalCurrency = "USD") => {
+        if (!currencyRates[originalCurrency] || !currencyRates[selectedCurrency]) return amount;
+        return (amount * currencyRates[selectedCurrency]) / currencyRates[originalCurrency];
+    };
+
+    const formatCurrency = (amount) => {
+        const symbol = currencySymbols[selectedCurrency] || selectedCurrency;
+        return `${symbol}${amount.toFixed(2)}`;
+    };
 
     useEffect(() => {
         const fetchRecentTransactions = async () => {
@@ -101,12 +116,12 @@ const Dashboard = () => {
 
         const fetchBudgetAdherence = async () => {
             try {
-                const response = await axios.get("/api/insights/budget-adherence", {withCredentials: true});
+                const response = await axios.get("/api/insights/budget-adherence", { withCredentials: true });
                 setBudgetAdherence(response.data);
             } catch (err) {
                 console.error("Failed to load budget adherence");
             }
-        }
+        };
 
         fetchRecentTransactions();
         fetchSpendingData();
@@ -114,8 +129,9 @@ const Dashboard = () => {
         fetchBudgetSummary();
         fetchIncomeGoals();
         fetchBudgetAdherence();
-    }, []);
+    }, [selectedCurrency]);
 
+    // Chart options with formatting
     const chartOptions = {
         maintainAspectRatio: false,
         responsive: true,
@@ -128,8 +144,8 @@ const Dashboard = () => {
                     label: function (context) {
                         const value = context.raw;
                         return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                            ? formatCurrency(value)
+                            : formatCurrency(0);
                     },
                 },
             },
@@ -138,12 +154,13 @@ const Dashboard = () => {
             y: {
                 ticks: {
                     callback: function (value) {
-                        return `$${value}`;
+                        return formatCurrency(value);
                     },
                 },
             },
         },
     };
+
     const doughnutChartOptions = {
         maintainAspectRatio: false,
         responsive: true,
@@ -156,8 +173,8 @@ const Dashboard = () => {
                     label: function (context) {
                         const value = context.raw;
                         return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                            ? formatCurrency(value)
+                            : formatCurrency(0);
                     },
                 },
             },
@@ -176,16 +193,17 @@ const Dashboard = () => {
                 };
                 datasets.push(dataset);
             }
-            dataset.data.push(total);
+            dataset.data.push(convertAmount(total));
             return datasets;
         }, []),
     };
+
     const incomeChartData = {
         labels: incomeTrends.map((data) => data.month),
         datasets: [
             {
                 label: "Income",
-                data: incomeTrends.map((data) => data.total),
+                data: incomeTrends.map((data) => convertAmount(data.total)),
                 fill: false,
                 backgroundColor: "rgba(75, 192, 192, 0.5)",
                 borderColor: "rgba(75, 192, 192, 1)",
@@ -197,12 +215,11 @@ const Dashboard = () => {
         labels: budgetAdherence.map((data) => data.category),
         datasets: [
             {
-                data: budgetAdherence.map((data) => data.spent),
+                data: budgetAdherence.map((data) => convertAmount(data.spent)),
                 backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
             },
         ],
     };
-
     return (
         <SidebarLayout>
             <h1 className="text-2xl font-bold mb-6">Welcome to Your Dashboard</h1>
@@ -224,8 +241,8 @@ const Dashboard = () => {
                                 >
                                     <div>
                                         <p className="font-medium">
-                                            {transaction.category} - {transaction.type === "expense" ? "-" : "+"}$
-                                            {transaction.amount.toFixed(2)}
+                                            {transaction.category} - {transaction.type === "expense" ? "-" : "+"}
+                                            {formatCurrency(convertAmount(transaction.amount, transaction.currency))}
                                         </p>
                                         <p className="text-sm text-gray-500">
                                             {new Date(transaction.transaction_date).toLocaleDateString()}
@@ -257,8 +274,9 @@ const Dashboard = () => {
                     {!loadingBudgets && !errorBudgets && budgetSummary
                         .slice(0, 5)
                         .map(({ category, budget, spent }) => {
-                            const spentValue = parseFloat(spent) || 0;
-                            const percentage = Math.min((spentValue / budget) * 100, 100);
+                            const convertedSpent = convertAmount(spent, "USD", selectedCurrency); // Add conversion
+                            const convertedBudget = convertAmount(budget, "USD", selectedCurrency); // Add conversion
+                            const percentage = Math.min((convertedSpent / convertedBudget) * 100, 100);
                             const barColor =
                                 percentage < 75
                                     ? "bg-green-500"
@@ -272,10 +290,11 @@ const Dashboard = () => {
                                         <span className="font-medium">{category}</span>
                                         <span
                                             className={`font-bold ${
-                                                spentValue > budget ? "text-red-500" : "text-gray-700"
+                                                convertedSpent > convertedBudget ? "text-red-500" : "text-gray-700"
                                             }`}
                                         >
-                                            ${spentValue.toFixed(2)} / ${budget.toFixed(2)}
+                                            {formatCurrency(convertedSpent, selectedCurrency)} /{" "}
+                                            {formatCurrency(convertedBudget, selectedCurrency)}
                                         </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
@@ -303,13 +322,16 @@ const Dashboard = () => {
                         incomeGoals
                             .slice(0, 5)
                             .map(({ id, category, amount, progress, deadline }) => {
-                                const percentage = Math.min((progress / amount) * 100, 100);
+                                const convertedProgress = convertAmount(progress, "USD", selectedCurrency); // Add conversion
+                                const convertedAmount = convertAmount(amount, "USD", selectedCurrency); // Add conversion
+                                const percentage = Math.min((convertedProgress / convertedAmount) * 100, 100);
                                 const barColor =
                                     percentage < 75
                                         ? "bg-green-500"
                                         : percentage < 100
                                             ? "bg-yellow-500"
                                             : "bg-blue-500";
+
 
                                 return (
                                     <div key={id} className="mb-4">
@@ -320,7 +342,8 @@ const Dashboard = () => {
                                                     percentage >= 100 ? "text-blue-500" : "text-gray-700"
                                                 }`}
                                             >
-                                                ${progress.toFixed(2)} / ${amount.toFixed(2)}
+                                                {formatCurrency(convertedProgress, selectedCurrency)} /{" "}
+                                                {formatCurrency(convertedAmount, selectedCurrency)}
                                             </span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-4 mt-2">

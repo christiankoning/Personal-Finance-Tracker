@@ -7,6 +7,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\InsightController;
+use App\Http\Controllers\CurrencyController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::middleware('web')->group(function () {
@@ -36,4 +37,6 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/insights/spending-trends', [InsightController::class, 'spendingTrends']);
     Route::get('/insights/income-trends', [InsightController::class, 'incomeTrends']);
     Route::get('/insights/budget-adherence', [InsightController::class, 'budgetAdherence']);
+    Route::get('/currency/rates', [CurrencyController::class, 'getRates']);
+    Route::get('/currency/symbols', [CurrencyController::class, 'getSymbols']);
 });
