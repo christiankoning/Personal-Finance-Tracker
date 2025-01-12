@@ -13,6 +13,7 @@ class Budget extends Model
         'user_id',
         'category',
         'amount',
+        'currency',
     ];
 
     protected $casts = [
