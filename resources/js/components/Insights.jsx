@@ -70,9 +70,7 @@ const Insights = () => {
                 callbacks: {
                     label: function (context) {
                         const value = context.raw;
-                        return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                        return typeof value === "number" ? `$${value.toFixed(2)}` : "$0.00";
                     },
                 },
             },
@@ -82,6 +80,26 @@ const Insights = () => {
                 ticks: {
                     callback: function (value) {
                         return `$${value}`;
+                    },
+                },
+            },
+        },
+    };
+
+    const doughnutChartOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "top",
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const value = context.raw;
+                        return value !== undefined && value !== null
+                            ? `$${parseFloat(value).toFixed(2)}`
+                            : "$0.00";
                     },
                 },
             },
@@ -163,7 +181,7 @@ const Insights = () => {
                     <h2 className="font-bold text-lg mb-4">Budget Adherence</h2>
                     {budgetAdherence.length > 0 ? (
                         <div className="h-64">
-                            <Doughnut data={budgetChartData} options={chartOptions} />
+                            <Doughnut data={budgetChartData} options={doughnutChartOptions} />
                         </div>
                     ) : (
                         <p className="text-sm text-gray-500">No budget adherence data available.</p>

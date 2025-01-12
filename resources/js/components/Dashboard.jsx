@@ -183,6 +183,25 @@ const Dashboard = () => {
             },
         },
     };
+    const doughnutChartOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "top",
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const value = context.raw;
+                        return value !== undefined && value !== null
+                            ? `$${parseFloat(value).toFixed(2)}`
+                            : "$0.00";
+                    },
+                },
+            },
+        },
+    };
 
     return (
         <SidebarLayout>
@@ -355,7 +374,7 @@ const Dashboard = () => {
                     <h2 className="font-bold text-lg">Budget Adherence</h2>
                     {budgetAdherence.length > 0 ? (
                         <div className="h-48">
-                            <Doughnut data={budgetChartData} options={chartOptions} />
+                            <Doughnut data={budgetChartData} options={doughnutChartOptions} />
                         </div>
                     ) : (
                         <p className="text-sm text-gray-500">No budget adherence data available.</p>
