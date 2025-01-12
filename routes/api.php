@@ -1,13 +1,12 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\InsightController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::middleware('web')->group(function () {
@@ -34,4 +33,7 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::post('/goals', [GoalController::class, 'store']);
     Route::put('/goals/{id}', [GoalController::class, 'update']);
     Route::delete('/goals/{id}', [GoalController::class, 'destroy']);
+    Route::get('/insights/spending-trends', [InsightController::class, 'spendingTrends']);
+    Route::get('/insights/income-trends', [InsightController::class, 'incomeTrends']);
+    Route::get('/insights/budget-adherence', [InsightController::class, 'budgetAdherence']);
 });
