@@ -13,7 +13,6 @@ import {
     Legend,
 } from "chart.js";
 
-// Register Chart.js components
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -25,14 +24,14 @@ ChartJS.register(
     Legend
 );
 
-// Category-Color Mapping
 const categoryColors = {
-    Groceries: "rgba(255, 99, 132, 0.5)", // Red
-    Entertainment: "rgba(54, 162, 235, 0.5)", // Blue
-    Utilities: "rgba(255, 206, 86, 0.5)", // Yellow
-    Rent: "rgba(75, 192, 192, 0.5)", // Teal
-    Travel: "rgba(153, 102, 255, 0.5)", // Purple
-    Other: "rgba(199, 199, 199, 0.5)", // Gray
+    Groceries: "rgba(235, 87, 87, 0.8)",
+    Entertainment: "rgba(72, 207, 173, 0.8)",
+    Utilities: "rgba(240, 196, 25, 0.8)",
+    Rent: "rgba(51, 105, 232, 0.8)",
+    Travel: "rgba(163, 95, 224, 0.8)",
+    Transport: "rgba(0, 150, 136, 0.8)",
+    Other: "rgba(124, 124, 124, 0.8)",
 };
 
 const getColorForCategory = (category) => categoryColors[category] || "rgba(100, 100, 100, 0.5)";
@@ -66,6 +65,25 @@ const Insights = () => {
         plugins: {
             legend: {
                 position: "top",
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const value = context.raw;
+                        return value !== undefined && value !== null
+                            ? `$${parseFloat(value).toFixed(2)}`
+                            : "$0.00";
+                    },
+                },
+            },
+        },
+        scales: {
+            y: {
+                ticks: {
+                    callback: function (value) {
+                        return `$${value}`;
+                    },
+                },
             },
         },
     };
@@ -115,40 +133,42 @@ const Insights = () => {
         <SidebarLayout>
             <h1 className="text-3xl font-bold mb-6">Insights</h1>
 
-            {/* Spending Trends */}
-            <div className="p-4 bg-white rounded-lg shadow mb-6">
-                <h2 className="font-bold text-lg mb-4">Spending Trends</h2>
-                {spendingTrends.length > 0 ? (
-                    <div className="h-64">
-                        <Bar data={spendingChartData} options={chartOptions} />
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-500">No spending data available.</p>
-                )}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Spending Trends */}
+                <div className="p-4 bg-white rounded-lg shadow w-full">
+                    <h2 className="font-bold text-lg mb-4">Spending Trends</h2>
+                    {spendingTrends.length > 0 ? (
+                        <div className="h-64">
+                            <Bar data={spendingChartData} options={chartOptions} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">No spending data available.</p>
+                    )}
+                </div>
 
-            {/* Income Trends */}
-            <div className="p-4 bg-white rounded-lg shadow mb-6">
-                <h2 className="font-bold text-lg mb-4">Income Trends</h2>
-                {incomeTrends.length > 0 ? (
-                    <div className="h-64">
-                        <Line data={incomeChartData} options={chartOptions} />
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-500">No income data available.</p>
-                )}
-            </div>
+                {/* Income Trends */}
+                <div className="p-4 bg-white rounded-lg shadow w-full">
+                    <h2 className="font-bold text-lg mb-4">Income Trends</h2>
+                    {incomeTrends.length > 0 ? (
+                        <div className="h-64">
+                            <Line data={incomeChartData} options={chartOptions} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">No income data available.</p>
+                    )}
+                </div>
 
-            {/* Budget Adherence */}
-            <div className="p-4 bg-white rounded-lg shadow">
-                <h2 className="font-bold text-lg mb-4">Budget Adherence</h2>
-                {budgetAdherence.length > 0 ? (
-                    <div className="h-64">
-                        <Doughnut data={budgetChartData} options={chartOptions} />
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-500">No budget adherence data available.</p>
-                )}
+                {/* Budget Adherence */}
+                <div className="p-4 bg-white rounded-lg shadow w-full md:col-span-2">
+                    <h2 className="font-bold text-lg mb-4">Budget Adherence</h2>
+                    {budgetAdherence.length > 0 ? (
+                        <div className="h-64">
+                            <Doughnut data={budgetChartData} options={chartOptions} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">No budget adherence data available.</p>
+                    )}
+                </div>
             </div>
         </SidebarLayout>
     );
