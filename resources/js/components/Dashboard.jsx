@@ -336,17 +336,16 @@ const Dashboard = () => {
                     ) : (
                         incomeGoals
                             .slice(0, 5)
-                            .map(({ id, category, amount, progress, deadline }) => {
-                                const convertedProgress = convertAmount(progress, "USD", selectedCurrency); // Add conversion
-                                const convertedAmount = convertAmount(amount, "USD", selectedCurrency); // Add conversion
-                                const percentage = Math.min((convertedProgress / convertedAmount) * 100, 100);
+                            .map(({ id, category, amount, progress, deadline, currency }) => {
+                                const convertedProgress = convertAmount(progress, currency);
+                                const convertedAmount = convertAmount(amount, currency);
+                                const percentage = Math.min((progress / amount) * 100, 100);
                                 const barColor =
                                     percentage < 75
                                         ? "bg-green-500"
                                         : percentage < 100
                                             ? "bg-yellow-500"
                                             : "bg-blue-500";
-
 
                                 return (
                                     <div key={id} className="mb-4">
@@ -357,9 +356,19 @@ const Dashboard = () => {
                                                     percentage >= 100 ? "text-blue-500" : "text-gray-700"
                                                 }`}
                                             >
-                                                {formatCurrency(convertedProgress, selectedCurrency)} /{" "}
-                                                {formatCurrency(convertedAmount, selectedCurrency)}
-                                            </span>
+                                {formatCurrency(progress, currency)}{" "}
+                                                {selectedCurrency !== currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedProgress, selectedCurrency)})
+                                    </span>
+                                                )}
+                                                {" "} / {formatCurrency(amount, currency)}{" "}
+                                                {selectedCurrency !== currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedAmount, selectedCurrency)})
+                                    </span>
+                                                )}
+                            </span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
                                             <div
