@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import CategoryDropdown from "./CategoryDropdown";
+import CategoryDropdown, {standardCategories} from "./CategoryDropdown";
 import { CurrencyContext } from "./CurrencyContext";
 
 const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
@@ -11,13 +11,18 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
         amount: "",
         transaction_date: "",
         description: "",
-        type: "expense",
+        type: "expense", // Default to "expense"
         currency: selectedCurrency,
     });
     const [error, setError] = useState("");
 
-    const handleCategoryChange = ({ category, customCategory }) => {
-        setFormData({ ...formData, category, customCategory });
+    const handleCategoryChange = ({ category, customCategory, customType }) => {
+        const selectedType =
+            category === "Other"
+                ? customType || "expense" // Default to "expense" for custom categories
+                : standardCategories.find((cat) => cat.name === category)?.type || "expense";
+
+        setFormData({ ...formData, category, customCategory, type: selectedType });
     };
 
     const handleSubmit = async (e) => {
@@ -55,6 +60,10 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                         onCategoryChange={handleCategoryChange}
                         filterType="all"
                         showCustomType={true}
+                        customType={formData.type}
+                        onCustomTypeChange={(customType) =>
+                            setFormData({ ...formData, type: customType })
+                        }
                     />
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">

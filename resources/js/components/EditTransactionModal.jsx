@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import CategoryDropdown from "./CategoryDropdown";
+import CategoryDropdown, { standardCategories } from "./CategoryDropdown";
 import { CurrencyContext } from "./CurrencyContext";
 
 const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
@@ -16,8 +16,13 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
     });
     const [error, setError] = useState("");
 
-    const handleCategoryChange = ({ category, customCategory }) => {
-        setFormData({ ...formData, category, customCategory });
+    const handleCategoryChange = ({ category, customCategory, customType }) => {
+        const selectedType =
+            category === "Other"
+                ? customType || "expense" // Default to "expense" for custom categories
+                : standardCategories.find((cat) => cat.name === category)?.type || "expense";
+
+        setFormData({ ...formData, category, customCategory, type: selectedType });
     };
 
     const handleChange = (e) => {
@@ -61,6 +66,10 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                         onCategoryChange={handleCategoryChange}
                         filterType="all"
                         showCustomType={true}
+                        customType={formData.type}
+                        onCustomTypeChange={(customType) =>
+                            setFormData({ ...formData, type: customType })
+                        }
                     />
 
                     {/* Amount Field */}

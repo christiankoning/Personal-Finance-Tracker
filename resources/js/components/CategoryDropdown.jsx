@@ -1,6 +1,6 @@
 import React from "react";
 
-const standardCategories = [
+export const standardCategories = [
     {name: "Salary", type: "income"},
     {name: "Freelance", type: "income"},
     {name: "Groceries", type: "expense"},
