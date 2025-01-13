@@ -6,36 +6,53 @@ use App\Models\Goal;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\CurrencyController;
 
 class GoalController extends Controller
 {
     /**
-     * Display a listing of the user's goals.
+     * Display a listing of the user's goals with progress.
      */
     public function index()
     {
         $userId = Auth::id();
 
-        // Fetch all goals for the user
         $goals = Goal::where('user_id', $userId)->get();
 
-        // Retrieve income transactions grouped by category
-        $transactions = Transaction::selectRaw('category, SUM(amount) as total_income')
+        $transactions = Transaction::selectRaw('category, currency, SUM(amount) as total_income')
             ->where('user_id', $userId)
-            ->where('type', 'income') // Ensure only income transactions
-            ->groupBy('category')
+            ->where('type', 'income')
+            ->groupBy('category', 'currency')
             ->get();
 
-        // Map income transactions to goals
-        $data = $goals->map(function ($goal) use ($transactions) {
-            $income = $transactions->firstWhere('category', $goal->category)?->total_income ?? 0;
+        // Fetch rates from CurrencyController
+        $currencyController = new CurrencyController();
+        $rates = $currencyController->getRates()->getData();
+
+        if (isset($rates->error)) {
+            return response()->json(['error' => 'Failed to fetch exchange rates'], 500);
+        }
+
+        $data = $goals->map(function ($goal) use ($transactions, $rates) {
+            $relatedTransactions = $transactions->where('category', $goal->category);
+
+            $income = $relatedTransactions->reduce(function ($total, $transaction) use ($goal, $rates) {
+                $transactionCurrency = $transaction->currency ?? 'USD';
+                if (!isset($rates->{$transactionCurrency}) || !isset($rates->{$goal->currency})) {
+                    return $total;
+                }
+
+                $convertedAmount = ($transaction->total_income / $rates->{$transactionCurrency}) * $rates->{$goal->currency};
+                return $total + $convertedAmount;
+            }, 0);
 
             return [
                 'id' => $goal->id,
                 'category' => $goal->category,
                 'amount' => $goal->amount,
+                'currency' => $goal->currency,
                 'deadline' => $goal->deadline,
-                'progress' => (float) $income, // Ensure progress is a float
+                'progress' => round($income, 2),
             ];
         });
 
@@ -50,6 +67,7 @@ class GoalController extends Controller
         $validated = $request->validate([
             'category' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
+            'currency' => 'required|string|max:3',
             'deadline' => 'nullable|date',
         ]);
 
@@ -57,6 +75,7 @@ class GoalController extends Controller
             'user_id' => Auth::id(),
             'category' => $validated['category'],
             'amount' => $validated['amount'],
+            'currency' => $validated['currency'],
             'deadline' => $validated['deadline'] ?? null,
         ]);
 
@@ -73,6 +92,7 @@ class GoalController extends Controller
         $validated = $request->validate([
             'category' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
+            'currency' => 'required|string|max:3',
             'deadline' => 'nullable|date',
         ]);
 

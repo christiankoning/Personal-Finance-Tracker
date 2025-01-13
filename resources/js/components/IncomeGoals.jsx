@@ -1,13 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import SidebarLayout from "./SidebarLayout";
 import CategoryDropdown from "./CategoryDropdown";
+import { CurrencyContext } from "./CurrencyContext";
 import axios from "axios";
 
 const IncomeGoals = () => {
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
     const [goals, setGoals] = useState([]);
-    const [formData, setFormData] = useState({ category: "", customCategory: "", amount: "", deadline: "" });
+    const [formData, setFormData] = useState({
+        category: "",
+        customCategory: "",
+        amount: "",
+        deadline: "",
+        currency: selectedCurrency, // Default to the selected currency
+    });
     const [editingGoal, setEditingGoal] = useState(null);
     const [error, setError] = useState("");
+
+    const convertAmount = (amount, fromCurrency, toCurrency) => {
+        if (!currencyRates[fromCurrency] || !currencyRates[toCurrency]) return amount;
+        return (amount / currencyRates[fromCurrency]) * currencyRates[toCurrency];
+    };
+
+    const formatCurrency = (amount, currency) => {
+        const symbol = currencySymbols[currency] || currency;
+        return `${symbol}${amount.toFixed(2)}`;
+    };
 
     useEffect(() => {
         const fetchGoals = async () => {
@@ -22,22 +40,35 @@ const IncomeGoals = () => {
         fetchGoals();
     }, []);
 
+    useEffect(() => {
+        // Dynamically update the modal currency when the sidebar's selected currency changes
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            currency: editingGoal ? prevFormData.currency : selectedCurrency,
+        }));
+    }, [selectedCurrency]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
+            const updatedFormData = {
+                ...formData,
+                amount: parseFloat(formData.amount),
+            };
+
             if (editingGoal) {
-                const response = await axios.put(`/api/goals/${editingGoal.id}`, formData, { withCredentials: true });
+                const response = await axios.put(`/api/goals/${editingGoal.id}`, updatedFormData, { withCredentials: true });
                 setGoals((prev) =>
                     prev.map((goal) => (goal.id === editingGoal.id ? response.data : goal))
                 );
                 setEditingGoal(null);
             } else {
-                const response = await axios.post("/api/goals", formData, { withCredentials: true });
+                const response = await axios.post("/api/goals", updatedFormData, { withCredentials: true });
                 setGoals((prev) => [...prev, response.data]);
             }
 
-            setFormData({ category: "", customCategory: "", amount: "", deadline: "" });
+            setFormData({ category: "", customCategory: "", amount: "", deadline: "", currency: selectedCurrency });
         } catch (err) {
             setError("Failed to save income goal.");
         }
@@ -59,6 +90,7 @@ const IncomeGoals = () => {
             customCategory: goal.category === "Other" ? goal.customCategory : "",
             amount: goal.amount,
             deadline: goal.deadline || "",
+            currency: goal.currency, // Use goal's original currency
         });
     };
 
@@ -89,6 +121,22 @@ const IncomeGoals = () => {
                     />
                 </div>
                 <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">Currency</label>
+                    <select
+                        name="currency"
+                        value={formData.currency}
+                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                        className="w-full mt-1 px-4 py-2 border rounded-lg"
+                        disabled={!!editingGoal} // Disable currency input for existing goals
+                    >
+                        {Object.keys(currencyRates).map((currency) => (
+                            <option key={currency} value={currency}>
+                                {currencySymbols[currency] || currency} - {currency}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700">Deadline (Optional)</label>
                     <input
                         type="date"
@@ -104,7 +152,7 @@ const IncomeGoals = () => {
                             type="button"
                             onClick={() => {
                                 setEditingGoal(null);
-                                setFormData({ category: "", customCategory: "", amount: "", deadline: "" });
+                                setFormData({ category: "", customCategory: "", amount: "", deadline: "", currency: selectedCurrency });
                             }}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                         >
@@ -128,7 +176,9 @@ const IncomeGoals = () => {
                 {goals.length === 0 ? (
                     <p className="text-sm text-gray-500">No income goals set.</p>
                 ) : (
-                    goals.map(({ id, category, amount, progress, deadline }) => {
+                    goals.map(({ id, category, amount, progress, deadline, currency }) => {
+                        const convertedProgress = convertAmount(progress, currency, selectedCurrency);
+                        const convertedAmount = convertAmount(amount, currency, selectedCurrency);
                         const percentage = Math.min((progress / amount) * 100, 100);
                         const barColor =
                             percentage < 75
@@ -143,13 +193,25 @@ const IncomeGoals = () => {
                                     <div>
                                         <p className="font-medium">{category}</p>
                                         <p className="text-sm text-gray-500">
-                                            Target: ${progress.toFixed(2)} / ${amount.toFixed(2)}{" "}
-                                            {deadline && `by ${new Date(deadline).toLocaleDateString()}`}
+                                            Target:{" "}
+                                            {formatCurrency(progress, currency)}{" "}
+                                            {selectedCurrency !== currency && (
+                                                <span className="text-gray-500">
+                                                    ({formatCurrency(convertedProgress, selectedCurrency)})
+                                                </span>
+                                            )}{" "}
+                                            - {formatCurrency(amount, currency)}{" "}
+                                            {selectedCurrency !== currency && (
+                                                <span className="text-gray-500">
+                                                    ({formatCurrency(convertedAmount, selectedCurrency)})
+                                                </span>
+                                            )}
+                                            {deadline && ` by ${new Date(deadline).toLocaleDateString()}`}
                                         </p>
                                     </div>
                                     <div className="flex space-x-2">
                                         <button
-                                            onClick={() => handleEdit({ id, category, amount, progress, deadline })}
+                                            onClick={() => handleEdit({ id, category, amount, progress, deadline, currency })}
                                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                                         >
                                             Edit
