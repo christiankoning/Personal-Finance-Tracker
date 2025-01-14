@@ -184,14 +184,37 @@ const Budgets = () => {
                                         <div>
                                             <span className="font-medium">{category}</span>
                                             <span className="ml-4 font-bold">
-                                                {formatCurrency(spent, currency)} / {formatCurrency(budget, currency)} {/* Original */}
+                                    {formatCurrency(spent, currency)} / {formatCurrency(budget, currency)} {/* Original */}
                                                 {selectedCurrency !== currency && (
                                                     <span className="text-gray-500 text-sm ml-2">
-                                                        ({formatCurrency(convertedSpent, selectedCurrency)} /{" "}
+                                            ({formatCurrency(convertedSpent, selectedCurrency)} /{" "}
                                                         {formatCurrency(convertedBudget, selectedCurrency)}) {/* Converted */}
-                                                    </span>
+                                        </span>
                                                 )}
-                                            </span>
+                                </span>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            {/* Edit Button */}
+                                            <button
+                                                onClick={() =>
+                                                    setSelectedBudget({
+                                                        id: budgets.find((budget) => budget.category === category)?.id,
+                                                        category,
+                                                        amount: budget,
+                                                        currency,
+                                                    })
+                                                }
+                                                className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                                            >
+                                                Edit
+                                            </button>
+                                            {/* Delete Button */}
+                                            <button
+                                                onClick={() => handleDelete(budgets.find((budget) => budget.category === category)?.id)}
+                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
@@ -211,7 +234,6 @@ const Budgets = () => {
                     </ul>
                 )}
             </div>
-
             {selectedBudget && (
                 <EditBudgetModal
                     budget={selectedBudget}
