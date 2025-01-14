@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import SidebarLayout from "./SidebarLayout";
 import TransactionTable from "./TransactionTable";
 import AddTransactionModal from "./AddTransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import axios from "axios";
+import { CurrencyContext } from "./CurrencyContext";
 
 const Transactions = () => {
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -27,39 +29,6 @@ const Transactions = () => {
         fetchTransactions();
     }, []);
 
-    const handleTransactionAdded = (newTransaction) => {
-        setTransactions((prev) =>
-            [...prev, newTransaction].sort(
-                (a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)
-            )
-        );
-    };
-
-    const handleTransactionUpdated = (updatedTransaction) => {
-        setTransactions((prev) =>
-            prev.map((transaction) =>
-                transaction.id === updatedTransaction.id ? updatedTransaction : transaction
-            )
-        );
-    };
-
-    const handleEdit = (transaction) => {
-        setSelectedTransaction(transaction);
-        setShowEditModal(true);
-    };
-
-    const handleDelete = async (transactionId) => {
-        try {
-            await axios.delete(`/api/transactions/${transactionId}`, { withCredentials: true });
-            setTransactions((prev) =>
-                prev.filter((transaction) => transaction.id !== transactionId)
-            );
-            alert("Transaction deleted successfully.");
-        } catch (err) {
-            alert("Failed to delete transaction. Please try again.");
-        }
-    };
-
     if (loading) {
         return <p>Loading transactions...</p>;
     }
@@ -79,20 +48,45 @@ const Transactions = () => {
             </button>
             <TransactionTable
                 transactions={transactions}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={(transaction) => {
+                    setSelectedTransaction(transaction);
+                    setShowEditModal(true);
+                }}
+                onDelete={async (id) => {
+                    try {
+                        await axios.delete(`/api/transactions/${id}`, { withCredentials: true });
+                        setTransactions((prev) => prev.filter((t) => t.id !== id));
+                    } catch {
+                        alert("Failed to delete transaction.");
+                    }
+                }}
+                selectedCurrency={selectedCurrency}
+                currencyRates={currencyRates}
+                currencySymbols={currencySymbols}
             />
             {showAddModal && (
                 <AddTransactionModal
                     onClose={() => setShowAddModal(false)}
-                    onTransactionAdded={handleTransactionAdded}
+                    onTransactionAdded={(newTransaction) => {
+                        setTransactions((prev) =>
+                            [...prev, newTransaction].sort(
+                                (a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)
+                            )
+                        );
+                    }}
                 />
             )}
             {showEditModal && selectedTransaction && (
                 <EditTransactionModal
                     transaction={selectedTransaction}
                     onClose={() => setShowEditModal(false)}
-                    onTransactionUpdated={handleTransactionUpdated}
+                    onTransactionUpdated={(updatedTransaction) => {
+                        setTransactions((prev) =>
+                            prev.map((t) =>
+                                t.id === updatedTransaction.id ? updatedTransaction : t
+                            )
+                        );
+                    }}
                 />
             )}
         </SidebarLayout>

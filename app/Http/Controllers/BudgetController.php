@@ -20,12 +20,14 @@ class BudgetController extends Controller
         $request->validate([
             'category' => 'required|string',
             'amount' => 'required|numeric',
+            'currency' => 'required|string|max:3',
         ]);
 
         $budget = Budget::create([
             'user_id' => Auth::id(),
             'category' => $request->category,
             'amount' => $request->amount,
+            'currency' => $request->currency,
         ]);
 
         return response()->json($budget, 201);
@@ -38,6 +40,7 @@ class BudgetController extends Controller
         $request->validate([
             'category' => 'required|string',
             'amount' => 'required|numeric',
+            'currency' => 'required|string|max:3',
         ]);
 
         $budget->update($request->all());
@@ -59,21 +62,45 @@ class BudgetController extends Controller
         $currentMonth = now()->format('Y-m');
 
         try {
-            $spending = Transaction::selectRaw('category, SUM(amount) as total_spent')
+            $spending = Transaction::selectRaw('category, SUM(amount) as total_spent, currency')
                 ->where('user_id', $userId)
                 ->where('type', 'expense')
                 ->where('transaction_date', 'like', "{$currentMonth}%")
-                ->groupBy('category')
+                ->groupBy('category', 'currency')
                 ->get();
+
+            $currencyController = new CurrencyController();
+            $exchangeRates = $currencyController->getRates()->getData();
+
+            if (!isset($exchangeRates->error)) {
+                $exchangeRates = (array) $exchangeRates;
+            } else {
+                throw new \Exception('Failed to retrieve exchange rates.');
+            }
 
             $budgets = Budget::where('user_id', $userId)->get();
 
-            $data = $budgets->map(function ($budget) use ($spending) {
-                $spent = $spending->firstWhere('category', $budget->category)?->total_spent ?? 0;
+            $data = $budgets->map(function ($budget) use ($spending, $exchangeRates) {
+                $transactions = $spending->filter(fn($s) => $s->category === $budget->category);
+
+                $spent = $transactions->sum(function ($transaction) use ($budget, $exchangeRates) {
+                    $transactionCurrency = $transaction->currency;
+                    $transactionAmount = $transaction->total_spent;
+
+                    if ($transactionCurrency !== $budget->currency) {
+                        $rate = $exchangeRates[$transactionCurrency] ?? 1;
+                        $budgetRate = $exchangeRates[$budget->currency] ?? 1;
+                        return ($transactionAmount / $rate) * $budgetRate;
+                    }
+
+                    return $transactionAmount;
+                });
+
                 return [
                     'category' => $budget->category,
                     'budget' => $budget->amount,
-                    'spent' => (float) $spent, // Ensure spent is always a float
+                    'spent' => round($spent, 2),
+                    'currency' => $budget->currency,
                 ];
             });
 
@@ -82,6 +109,4 @@ class BudgetController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-
 }

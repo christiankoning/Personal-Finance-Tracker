@@ -1,24 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
-import CategoryDropdown from "./CategoryDropdown";
+import CategoryDropdown, {standardCategories} from "./CategoryDropdown";
+import { CurrencyContext } from "./CurrencyContext";
 
 const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
+    const { currencySymbols, selectedCurrency } = useContext(CurrencyContext);
     const [formData, setFormData] = useState({
         category: "",
         customCategory: "",
         amount: "",
         transaction_date: "",
         description: "",
-        type: "expense",
+        type: "expense", // Default to "expense"
+        currency: selectedCurrency,
     });
     const [error, setError] = useState("");
 
-    const handleCategoryChange = ({ category, customCategory }) => {
-        setFormData({ ...formData, category, customCategory });
-    };
+    const handleCategoryChange = ({ category, customCategory, customType }) => {
+        const selectedType =
+            category === "Other"
+                ? customType || "expense" // Default to "expense" for custom categories
+                : standardCategories.find((cat) => cat.name === category)?.type || "expense";
 
-    const handleCustomTypeChange = (type) => {
-        setFormData({ ...formData, type });
+        setFormData({ ...formData, category, customCategory, type: selectedType });
     };
 
     const handleSubmit = async (e) => {
@@ -54,10 +58,12 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
-                        customType={formData.type}
-                        onCustomTypeChange={handleCustomTypeChange}
                         filterType="all"
                         showCustomType={true}
+                        customType={formData.type}
+                        onCustomTypeChange={(customType) =>
+                            setFormData({ ...formData, type: customType })
+                        }
                     />
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
@@ -74,6 +80,26 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                             className="w-full mt-1 px-4 py-2 border rounded-lg"
                             required
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+                            Currency
+                        </label>
+                        <select
+                            id="currency"
+                            name="currency"
+                            value={formData.currency}
+                            onChange={(e) =>
+                                setFormData({ ...formData, [e.target.name]: e.target.value })
+                            }
+                            className="w-full mt-1 px-4 py-2 border rounded-lg"
+                        >
+                            {Object.entries(currencySymbols).map(([code, symbol]) => (
+                                <option key={code} value={code}>
+                                    {symbol} {code}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700">

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import SidebarLayout from "./SidebarLayout";
+import { CurrencyContext } from "./CurrencyContext";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -48,6 +49,20 @@ const Dashboard = () => {
     const [errorBudgets, setErrorBudgets] = useState("");
     const [incomeGoals, setIncomeGoals] = useState([]);
     const [budgetAdherence, setBudgetAdherence] = useState([]);
+
+    // CurrencyContext variables
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
+
+    // Helper functions for conversion and formatting
+    const convertAmount = (amount, originalCurrency = "USD") => {
+        if (!currencyRates[originalCurrency] || !currencyRates[selectedCurrency]) return amount;
+        return (amount * currencyRates[selectedCurrency]) / currencyRates[originalCurrency];
+    };
+
+    const formatCurrency = (amount, currency = selectedCurrency) => {
+        const symbol = currencySymbols[currency] || currency;
+        return `${symbol}${amount.toFixed(2)}`;
+    };
 
     useEffect(() => {
         const fetchRecentTransactions = async () => {
@@ -101,12 +116,12 @@ const Dashboard = () => {
 
         const fetchBudgetAdherence = async () => {
             try {
-                const response = await axios.get("/api/insights/budget-adherence", {withCredentials: true});
+                const response = await axios.get("/api/insights/budget-adherence", { withCredentials: true });
                 setBudgetAdherence(response.data);
             } catch (err) {
                 console.error("Failed to load budget adherence");
             }
-        }
+        };
 
         fetchRecentTransactions();
         fetchSpendingData();
@@ -114,8 +129,9 @@ const Dashboard = () => {
         fetchBudgetSummary();
         fetchIncomeGoals();
         fetchBudgetAdherence();
-    }, []);
+    }, [selectedCurrency]);
 
+    // Chart options with formatting
     const chartOptions = {
         maintainAspectRatio: false,
         responsive: true,
@@ -128,8 +144,8 @@ const Dashboard = () => {
                     label: function (context) {
                         const value = context.raw;
                         return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                            ? formatCurrency(value)
+                            : formatCurrency(0);
                     },
                 },
             },
@@ -138,12 +154,13 @@ const Dashboard = () => {
             y: {
                 ticks: {
                     callback: function (value) {
-                        return `$${value}`;
+                        return formatCurrency(value);
                     },
                 },
             },
         },
     };
+
     const doughnutChartOptions = {
         maintainAspectRatio: false,
         responsive: true,
@@ -156,8 +173,8 @@ const Dashboard = () => {
                     label: function (context) {
                         const value = context.raw;
                         return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                            ? formatCurrency(value)
+                            : formatCurrency(0);
                     },
                 },
             },
@@ -176,16 +193,17 @@ const Dashboard = () => {
                 };
                 datasets.push(dataset);
             }
-            dataset.data.push(total);
+            dataset.data.push(convertAmount(total));
             return datasets;
         }, []),
     };
+
     const incomeChartData = {
         labels: incomeTrends.map((data) => data.month),
         datasets: [
             {
                 label: "Income",
-                data: incomeTrends.map((data) => data.total),
+                data: incomeTrends.map((data) => convertAmount(data.total)),
                 fill: false,
                 backgroundColor: "rgba(75, 192, 192, 0.5)",
                 borderColor: "rgba(75, 192, 192, 1)",
@@ -197,12 +215,11 @@ const Dashboard = () => {
         labels: budgetAdherence.map((data) => data.category),
         datasets: [
             {
-                data: budgetAdherence.map((data) => data.spent),
+                data: budgetAdherence.map((data) => convertAmount(data.spent)),
                 backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
             },
         ],
     };
-
     return (
         <SidebarLayout>
             <h1 className="text-2xl font-bold mb-6">Welcome to Your Dashboard</h1>
@@ -217,34 +234,42 @@ const Dashboard = () => {
                     )}
                     {!loadingTransactions && !errorTransactions && recentTransactions.length > 0 && (
                         <ul className="space-y-2">
-                            {recentTransactions.map((transaction) => (
-                                <li
-                                    key={transaction.id}
-                                    className="flex justify-between items-center p-2 border-b last:border-0"
-                                >
-                                    <div>
-                                        <p className="font-medium">
-                                            {transaction.category} - {transaction.type === "expense" ? "-" : "+"}$
-                                            {transaction.amount.toFixed(2)}
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            {new Date(transaction.transaction_date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded ${
-                                                transaction.type === "expense"
-                                                    ? "bg-red-100 text-red-600"
-                                                    : "bg-green-100 text-green-600"
-                                            }`}
-                                        >
-                                            {transaction.type.charAt(0).toUpperCase() +
-                                            transaction.type.slice(1)}
-                                        </span>
-                                    </div>
-                                </li>
-                            ))}
+                            {recentTransactions.map((transaction) => {
+                                const convertedAmount = convertAmount(transaction.amount, transaction.currency || "USD");
+                                return (
+                                    <li
+                                        key={transaction.id}
+                                        className="flex justify-between items-center p-2 border-b last:border-0"
+                                    >
+                                        <div>
+                                            <p className="font-medium">
+                                                {transaction.category} - {transaction.type === "expense" ? "-" : "+"}
+                                                {formatCurrency(transaction.amount, transaction.currency)} {/* Original */}
+                                                {selectedCurrency !== transaction.currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedAmount, selectedCurrency)}) {/* Converted */}
+                                    </span>
+                                                )}
+                                            </p>
+                                            <p className="text-sm text-gray-500">
+                                                {new Date(transaction.transaction_date).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <div>
+                            <span
+                                className={`px-2 py-1 text-xs rounded ${
+                                    transaction.type === "expense"
+                                        ? "bg-red-100 text-red-600"
+                                        : "bg-green-100 text-green-600"
+                                }`}
+                            >
+                                {transaction.type.charAt(0).toUpperCase() +
+                                transaction.type.slice(1)}
+                            </span>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )}
                 </div>
@@ -254,44 +279,53 @@ const Dashboard = () => {
                     <h2 className="font-bold text-lg">Budget Summary</h2>
                     {loadingBudgets && <p className="text-sm text-gray-500">Loading budget data...</p>}
                     {errorBudgets && <p className="text-sm text-red-500">{errorBudgets}</p>}
-                    {!loadingBudgets && !errorBudgets && budgetSummary
-                        .slice(0, 5)
-                        .map(({ category, budget, spent }) => {
-                            const spentValue = parseFloat(spent) || 0;
-                            const percentage = Math.min((spentValue / budget) * 100, 100);
-                            const barColor =
-                                percentage < 75
-                                    ? "bg-green-500"
-                                    : percentage < 100
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500";
+                    {!loadingBudgets && !errorBudgets && budgetSummary.length > 0 ? (
+                        <ul>
+                            {budgetSummary.map(({ category, budget, spent, currency }) => {
+                                const convertedSpent = convertAmount(spent, currency);
+                                const convertedBudget = convertAmount(budget, currency);
+                                const percentage = Math.min((convertedSpent / convertedBudget) * 100, 100);
+                                const barColor =
+                                    percentage < 75
+                                        ? "bg-green-500"
+                                        : percentage < 100
+                                            ? "bg-yellow-500"
+                                            : "bg-red-500";
 
-                            return (
-                                <div key={category} className="mb-4">
-                                    <div className="flex justify-between">
-                                        <span className="font-medium">{category}</span>
-                                        <span
-                                            className={`font-bold ${
-                                                spentValue > budget ? "text-red-500" : "text-gray-700"
-                                            }`}
-                                        >
-                                            ${spentValue.toFixed(2)} / ${budget.toFixed(2)}
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
-                                        <div
-                                            className={`h-4 rounded-full ${barColor}`}
-                                            style={{ width: `${percentage}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    <div className="text-right mt-4">
-                        <a href="/budgets" className="text-blue-600 hover:underline text-sm">
-                            View All Budgets
-                        </a>
-                    </div>
+                                return (
+                                    <li key={category} className="mb-4 border-b last:border-0 py-2">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="font-medium">{category}</span>
+                                                <span className="ml-4 font-bold">
+                                                    {formatCurrency(spent, currency)} / {formatCurrency(budget, currency)} {/* Original */}
+                                                    {selectedCurrency !== currency && (
+                                                        <span className="text-gray-500 text-sm ml-2">
+                                                            ({formatCurrency(convertedSpent, selectedCurrency)} /{" "}
+                                                            {formatCurrency(convertedBudget, selectedCurrency)}) {/* Converted */}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                                            <div
+                                                className={`h-4 rounded-full ${barColor}`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                        {spent > budget && (
+                                            <p className="text-sm text-red-500 mt-2">
+                                                You’ve exceeded your budget for this category!
+                                            </p>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">No budgets or spending data available.</p>
+                    )}
                 </div>
 
                 {/* Income Goals */}
@@ -302,7 +336,9 @@ const Dashboard = () => {
                     ) : (
                         incomeGoals
                             .slice(0, 5)
-                            .map(({ id, category, amount, progress, deadline }) => {
+                            .map(({ id, category, amount, progress, deadline, currency }) => {
+                                const convertedProgress = convertAmount(progress, currency);
+                                const convertedAmount = convertAmount(amount, currency);
                                 const percentage = Math.min((progress / amount) * 100, 100);
                                 const barColor =
                                     percentage < 75
@@ -320,8 +356,19 @@ const Dashboard = () => {
                                                     percentage >= 100 ? "text-blue-500" : "text-gray-700"
                                                 }`}
                                             >
-                                                ${progress.toFixed(2)} / ${amount.toFixed(2)}
-                                            </span>
+                                {formatCurrency(progress, currency)}{" "}
+                                                {selectedCurrency !== currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedProgress, selectedCurrency)})
+                                    </span>
+                                                )}
+                                                {" "} / {formatCurrency(amount, currency)}{" "}
+                                                {selectedCurrency !== currency && (
+                                                    <span className="text-gray-500 text-sm ml-2">
+                                        ({formatCurrency(convertedAmount, selectedCurrency)})
+                                    </span>
+                                                )}
+                            </span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
                                             <div
