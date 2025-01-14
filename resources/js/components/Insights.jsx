@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import SidebarLayout from "./SidebarLayout";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
+import { CurrencyContext } from "./CurrencyContext";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -41,6 +42,20 @@ const Insights = () => {
     const [incomeTrends, setIncomeTrends] = useState([]);
     const [budgetAdherence, setBudgetAdherence] = useState([]);
 
+    const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
+
+    // Helper: Convert amount based on currency
+    const convertAmount = (amount, originalCurrency = "USD") => {
+        if (!currencyRates[originalCurrency] || !currencyRates[selectedCurrency]) return amount;
+        return (amount * currencyRates[selectedCurrency]) / currencyRates[originalCurrency];
+    };
+
+    // Helper: Format currency
+    const formatCurrency = (amount, currency = selectedCurrency) => {
+        const symbol = currencySymbols[currency] || currency;
+        return `${symbol}${parseFloat(amount || 0).toFixed(2)}`; // Ensure amount is parsed as a number
+    };
+
     useEffect(() => {
         const fetchInsights = async () => {
             try {
@@ -48,16 +63,17 @@ const Insights = () => {
                 const incomeResponse = await axios.get("/api/insights/income-trends", { withCredentials: true });
                 const adherenceResponse = await axios.get("/api/insights/budget-adherence", { withCredentials: true });
 
-                setSpendingTrends(spendingResponse.data);
-                setIncomeTrends(incomeResponse.data);
-                setBudgetAdherence(adherenceResponse.data);
+                // Validate and clean data
+                setSpendingTrends(spendingResponse.data || []);
+                setIncomeTrends(incomeResponse.data || []);
+                setBudgetAdherence(adherenceResponse.data || []);
             } catch (err) {
                 console.error("Failed to load insights.");
             }
         };
 
         fetchInsights();
-    }, []);
+    }, [selectedCurrency]);
 
     const chartOptions = {
         maintainAspectRatio: false,
@@ -69,8 +85,8 @@ const Insights = () => {
             tooltip: {
                 callbacks: {
                     label: function (context) {
-                        const value = context.raw;
-                        return typeof value === "number" ? `$${value.toFixed(2)}` : "$0.00";
+                        const value = parseFloat(context.raw || 0); // Ensure value is a number
+                        return formatCurrency(value);
                     },
                 },
             },
@@ -79,7 +95,7 @@ const Insights = () => {
             y: {
                 ticks: {
                     callback: function (value) {
-                        return `$${value}`;
+                        return formatCurrency(value);
                     },
                 },
             },
@@ -96,10 +112,8 @@ const Insights = () => {
             tooltip: {
                 callbacks: {
                     label: function (context) {
-                        const value = context.raw;
-                        return value !== undefined && value !== null
-                            ? `$${parseFloat(value).toFixed(2)}`
-                            : "$0.00";
+                        const value = parseFloat(context.raw || 0); // Ensure value is a number
+                        return formatCurrency(value);
                     },
                 },
             },
@@ -109,6 +123,7 @@ const Insights = () => {
     const spendingChartData = {
         labels: [...new Set(spendingTrends.map((data) => data.month))],
         datasets: spendingTrends.reduce((datasets, { month, category, total }) => {
+            const validTotal = parseFloat(total || 0); // Ensure total is a number
             let dataset = datasets.find((d) => d.label === category);
             if (!dataset) {
                 dataset = {
@@ -118,7 +133,7 @@ const Insights = () => {
                 };
                 datasets.push(dataset);
             }
-            dataset.data.push(total);
+            dataset.data.push(validTotal);
             return datasets;
         }, []),
     };
@@ -128,8 +143,7 @@ const Insights = () => {
         datasets: [
             {
                 label: "Income",
-                data: incomeTrends.map((data) => data.total),
-                fill: false,
+                data: incomeTrends.map(({ total }) => parseFloat(total || 0)), // Ensure total is a number
                 backgroundColor: "rgba(75, 192, 192, 0.5)",
                 borderColor: "rgba(75, 192, 192, 1)",
                 borderWidth: 1,
@@ -141,7 +155,7 @@ const Insights = () => {
         labels: budgetAdherence.map((data) => data.category),
         datasets: [
             {
-                data: budgetAdherence.map((data) => data.spent),
+                data: budgetAdherence.map(({ spent }) => parseFloat(spent || 0)), // Ensure spent is a number
                 backgroundColor: budgetAdherence.map((data) => getColorForCategory(data.category)),
             },
         ],
