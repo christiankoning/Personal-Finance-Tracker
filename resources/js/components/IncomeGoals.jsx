@@ -3,6 +3,7 @@ import SidebarLayout from "./SidebarLayout";
 import CategoryDropdown from "./CategoryDropdown";
 import { CurrencyContext } from "./CurrencyContext";
 import axios from "axios";
+import Select from "react-select";
 
 const IncomeGoals = () => {
     const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
@@ -47,6 +48,10 @@ const IncomeGoals = () => {
             currency: editingGoal ? prevFormData.currency : selectedCurrency,
         }));
     }, [selectedCurrency]);
+
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData({ ...formData, currency: selectedOption.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -94,6 +99,15 @@ const IncomeGoals = () => {
         });
     };
 
+    const currencyOptions = Object.entries(currencySymbols).map(([code, symbol]) => ({
+        value: code,
+        label: (
+            <span>
+                <strong>{code}</strong> <span style={{ color: "grey" }}>| {symbol}</span>
+            </span>
+        ),
+    }));
+
     return (
         <SidebarLayout>
             <h1 className="text-3xl font-bold mb-6">Your Income Goals</h1>
@@ -122,19 +136,25 @@ const IncomeGoals = () => {
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700">Currency</label>
-                    <select
-                        name="currency"
-                        value={formData.currency}
-                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        className="w-full mt-1 px-4 py-2 border rounded-lg"
-                        disabled={!!editingGoal} // Disable currency input for existing goals
-                    >
-                        {Object.keys(currencyRates).map((currency) => (
-                            <option key={currency} value={currency}>
-                                {currencySymbols[currency] || currency} - {currency}
-                            </option>
-                        ))}
-                    </select>
+                    <Select
+                        value={currencyOptions.find((option) => option.value === formData.currency)}
+                        options={currencyOptions}
+                        onChange={handleCurrencyChange}
+                        isDisabled={!!editingGoal} // Disable currency input for existing goals
+                        styles={{
+                            control: (provided) => ({
+                                ...provided,
+                                border: "1px solid #d1d5db",
+                                borderRadius: "0.375rem",
+                                padding: "0.25rem",
+                            }),
+                            option: (provided, state) => ({
+                                ...provided,
+                                backgroundColor: state.isFocused ? "#f9fafb" : "white",
+                                color: state.isSelected ? "#1f2937" : "#4b5563",
+                            }),
+                        }}
+                    />
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700">Deadline (Optional)</label>
