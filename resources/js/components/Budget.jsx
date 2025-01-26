@@ -4,6 +4,7 @@ import CategoryDropdown from "./CategoryDropdown";
 import EditBudgetModal from "./EditBudgetModal";
 import axios from "axios";
 import { CurrencyContext } from "./CurrencyContext";
+import Select from "react-select";
 
 const Budgets = () => {
     const { selectedCurrency, currencyRates, currencySymbols } = useContext(CurrencyContext);
@@ -46,6 +47,10 @@ const Budgets = () => {
 
     const handleCategoryChange = ({ category, customCategory }) => {
         setFormData({ ...formData, category, customCategory });
+    };
+
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData({ ...formData, currency: selectedOption.value });
     };
 
     const handleSubmit = async (e) => {
@@ -119,6 +124,15 @@ const Budgets = () => {
         );
     };
 
+    const currencyOptions = Object.entries(currencySymbols).map(([code, symbol]) => ({
+        value: code,
+        label: (
+            <span>
+                <strong>{code}</strong> <span style={{ color: "grey" }}>| {symbol}</span>
+            </span>
+        ),
+    }));
+
     return (
         <SidebarLayout>
             <h1 className="text-3xl font-bold mb-6">Manage Budgets</h1>
@@ -143,17 +157,24 @@ const Budgets = () => {
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700">Currency</label>
-                    <select
-                        value={formData.currency}
-                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        className="w-full px-4 py-2 border rounded-lg"
-                    >
-                        {Object.keys(currencyRates).map((currency) => (
-                            <option key={currency} value={currency}>
-                                {currencySymbols[currency] || currency} ({currency})
-                            </option>
-                        ))}
-                    </select>
+                    <Select
+                        value={currencyOptions.find((option) => option.value === formData.currency)}
+                        options={currencyOptions}
+                        onChange={handleCurrencyChange}
+                        styles={{
+                            control: (provided) => ({
+                                ...provided,
+                                border: "1px solid #d1d5db",
+                                borderRadius: "0.375rem",
+                                padding: "0.25rem",
+                            }),
+                            option: (provided, state) => ({
+                                ...provided,
+                                backgroundColor: state.isFocused ? "#f9fafb" : "white",
+                                color: state.isSelected ? "#1f2937" : "#4b5563",
+                            }),
+                        }}
+                    />
                 </div>
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     Add Budget

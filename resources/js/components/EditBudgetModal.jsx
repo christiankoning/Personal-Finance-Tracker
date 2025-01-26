@@ -1,10 +1,11 @@
-import React, {useState, useContext} from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import CategoryDropdown from "./CategoryDropdown";
-import {CurrencyContext} from "./CurrencyContext";
+import { CurrencyContext } from "./CurrencyContext";
+import Select from "react-select";
 
-const EditBudgetModal = ({budget, onClose, onBudgetUpdated}) => {
-    const {currencyRates, currencySymbols} = useContext(CurrencyContext);
+const EditBudgetModal = ({ budget, onClose, onBudgetUpdated }) => {
+    const { currencySymbols } = useContext(CurrencyContext);
     const [formData, setFormData] = useState({
         category: budget.category,
         customCategory: budget.category === "Other" ? budget.customCategory : "",
@@ -13,13 +14,17 @@ const EditBudgetModal = ({budget, onClose, onBudgetUpdated}) => {
     });
     const [error, setError] = useState("");
 
-    const handleCategoryChange = ({category, customCategory}) => {
-        setFormData({...formData, category, customCategory});
+    const handleCategoryChange = ({ category, customCategory }) => {
+        setFormData({ ...formData, category, customCategory });
+    };
+
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData({ ...formData, currency: selectedOption.value });
     };
 
     const handleChange = (e) => {
-        const {name, value} = e.target;
-        setFormData({...formData, [name]: value});
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
     };
 
     const handleSubmit = async (e) => {
@@ -36,29 +41,37 @@ const EditBudgetModal = ({budget, onClose, onBudgetUpdated}) => {
         try {
             const response = await axios.put(
                 `/api/budgets/${budget.id}`,
-                {...formData, category: finalCategory},
-                {withCredentials: true});
+                { ...formData, category: finalCategory },
+                { withCredentials: true }
+            );
             onBudgetUpdated(response.data);
             onClose();
         } catch (err) {
             setError("Failed to update budget. Please try again.");
         }
     };
+
+    const currencyOptions = Object.entries(currencySymbols).map(([code, symbol]) => ({
+        value: code,
+        label: (
+            <span>
+                <strong>{code}</strong> <span style={{ color: "grey" }}>| {symbol}</span>
+            </span>
+        ),
+    }));
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
                 <h2 className="text-lg font-bold mb-4">Edit Budget</h2>
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    {/* Category Dropdown */}
                     <CategoryDropdown
                         category={formData.category}
                         customCategory={formData.customCategory}
                         onCategoryChange={handleCategoryChange}
-                        filterType="expense" // Only show expense categories
-                        showCustomType={false} // Disable radio buttons for custom categories
+                        filterType="expense"
+                        showCustomType={false}
                     />
-
-                    {/* Amount Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Amount</label>
                         <input
@@ -70,28 +83,28 @@ const EditBudgetModal = ({budget, onClose, onBudgetUpdated}) => {
                             required
                         />
                     </div>
-
-                    {/* Currency Selector */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Currency</label>
-                        <select
-                            name="currency"
-                            value={formData.currency}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border rounded-lg"
-                        >
-                            {Object.keys(currencyRates).map((currency) => (
-                                <option key={currency} value={currency}>
-                                    {currencySymbols[currency] || currency} ({currency})
-                                </option>
-                            ))}
-                        </select>
+                        <Select
+                            value={currencyOptions.find((option) => option.value === formData.currency)}
+                            options={currencyOptions}
+                            onChange={handleCurrencyChange}
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "0.375rem",
+                                    padding: "0.25rem",
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    backgroundColor: state.isFocused ? "#f9fafb" : "white",
+                                    color: state.isSelected ? "#1f2937" : "#4b5563",
+                                }),
+                            }}
+                        />
                     </div>
-
-                    {/* Error Message */}
                     {error && <p className="text-red-500">{error}</p>}
-
-                    {/* Buttons */}
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"
