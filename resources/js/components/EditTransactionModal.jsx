@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import CategoryDropdown, { standardCategories } from "./CategoryDropdown";
 import { CurrencyContext } from "./CurrencyContext";
+import Select from "react-select";
 
 const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) => {
     const { currencySymbols } = useContext(CurrencyContext);
@@ -12,17 +13,21 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
         transaction_date: transaction.transaction_date,
         description: transaction.description,
         type: transaction.type,
-        currency: transaction.currency || "USD", // Use transaction's currency or default to "USD"
+        currency: transaction.currency || "USD",
     });
     const [error, setError] = useState("");
 
     const handleCategoryChange = ({ category, customCategory, customType }) => {
         const selectedType =
             category === "Other"
-                ? customType || "expense" // Default to "expense" for custom categories
+                ? customType || "expense"
                 : standardCategories.find((cat) => cat.name === category)?.type || "expense";
 
         setFormData({ ...formData, category, customCategory, type: selectedType });
+    };
+
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData({ ...formData, currency: selectedOption.value });
     };
 
     const handleChange = (e) => {
@@ -53,6 +58,15 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
             setError("Failed to update transaction. Please try again.");
         }
     };
+
+    const currencyOptions = Object.entries(currencySymbols).map(([code, symbol]) => ({
+        value: code,
+        label: (
+            <span>
+                <strong>{code}</strong> <span style={{ color: "grey" }}>| {symbol}</span>
+            </span>
+        ),
+    }));
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -93,19 +107,25 @@ const EditTransactionModal = ({ transaction, onClose, onTransactionUpdated }) =>
                         <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
                             Currency
                         </label>
-                        <select
+                        <Select
                             id="currency"
-                            name="currency"
-                            value={formData.currency}
-                            onChange={handleChange}
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
-                        >
-                            {Object.entries(currencySymbols).map(([code, symbol]) => (
-                                <option key={code} value={code}>
-                                    {symbol} {code}
-                                </option>
-                            ))}
-                        </select>
+                            value={currencyOptions.find((option) => option.value === formData.currency)}
+                            options={currencyOptions}
+                            onChange={handleCurrencyChange}
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "0.375rem",
+                                    padding: "0.25rem",
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    backgroundColor: state.isFocused ? "#f9fafb" : "white",
+                                    color: state.isSelected ? "#1f2937" : "#4b5563",
+                                }),
+                            }}
+                        />
                     </div>
 
                     {/* Date Field */}

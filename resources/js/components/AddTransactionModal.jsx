@@ -1,7 +1,8 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import CategoryDropdown, {standardCategories} from "./CategoryDropdown";
+import CategoryDropdown, { standardCategories } from "./CategoryDropdown";
 import { CurrencyContext } from "./CurrencyContext";
+import Select from "react-select";
 
 const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
     const { currencySymbols, selectedCurrency } = useContext(CurrencyContext);
@@ -11,7 +12,7 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
         amount: "",
         transaction_date: "",
         description: "",
-        type: "expense", // Default to "expense"
+        type: "expense",
         currency: selectedCurrency,
     });
     const [error, setError] = useState("");
@@ -19,10 +20,14 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
     const handleCategoryChange = ({ category, customCategory, customType }) => {
         const selectedType =
             category === "Other"
-                ? customType || "expense" // Default to "expense" for custom categories
+                ? customType || "expense"
                 : standardCategories.find((cat) => cat.name === category)?.type || "expense";
 
         setFormData({ ...formData, category, customCategory, type: selectedType });
+    };
+
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData({ ...formData, currency: selectedOption.value });
     };
 
     const handleSubmit = async (e) => {
@@ -48,6 +53,16 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
             setError("Failed to add transaction. Please try again.");
         }
     };
+
+    // Prepare options for react-select
+    const currencyOptions = Object.entries(currencySymbols).map(([code, symbol]) => ({
+        value: code,
+        label: (
+            <span>
+                <strong>{code}</strong> <span style={{ color: "grey" }}>| {symbol}</span>
+            </span>
+        ),
+    }));
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -85,21 +100,25 @@ const AddTransactionModal = ({ onClose, onTransactionAdded }) => {
                         <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
                             Currency
                         </label>
-                        <select
+                        <Select
                             id="currency"
-                            name="currency"
-                            value={formData.currency}
-                            onChange={(e) =>
-                                setFormData({ ...formData, [e.target.name]: e.target.value })
-                            }
-                            className="w-full mt-1 px-4 py-2 border rounded-lg"
-                        >
-                            {Object.entries(currencySymbols).map(([code, symbol]) => (
-                                <option key={code} value={code}>
-                                    {symbol} {code}
-                                </option>
-                            ))}
-                        </select>
+                            value={currencyOptions.find((option) => option.value === formData.currency)}
+                            options={currencyOptions}
+                            onChange={handleCurrencyChange}
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                    border: "1px solid #d1d5db", // Tailwind gray-300
+                                    borderRadius: "0.375rem", // Tailwind rounded-lg
+                                    padding: "0.25rem",
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    backgroundColor: state.isFocused ? "#f9fafb" : "white", // Light gray on hover
+                                    color: state.isSelected ? "#1f2937" : "#4b5563", // Dark text
+                                }),
+                            }}
+                        />
                     </div>
                     <div>
                         <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700">
